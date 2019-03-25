@@ -6,11 +6,11 @@
 
 * Hello World
 * 基本数据类型
-* 运算符和表达式
-* 流程控制(选择if、循环for)
+* 流程控制(条件if和switch、循环for)
 * 数组和对象(字典)
 * 函数
 * 输入输出
+* 异常处理
 
 ### 2 Hello World
 
@@ -57,7 +57,57 @@ var d string = `\"\\`
 
 但是，建议在实际开发时还是尽量声明变量为变量设置明确的类型。
 
-### 6 数组和对象(字典)
+### 4 流程控制(条件if和switch、循环for)
+
+if语句结构如下：
+
+``` go
+var a = 3
+
+if a > 2 {
+	fmt.Println("a > 2")
+} else {
+	fmt.Println(" a <= 2")
+}
+```
+
+注意：
+
+1 if判断的条件不需要括号
+2 大括号的位置不是随意的，必须如上面所示的位置(不能像其他编译型语言一样可以随意放置)
+
+switch语句结构如下：
+
+``` go
+var gender = "male"
+
+switch gender {
+case "male":
+	fmt.Println("男人")
+case "female":
+	fmt.Println("女人")
+default:
+	fmt.Println("未知")
+}
+```
+
+注意：语法上跟if类似，但是与其他语言有个区别是case结构里面不需要break
+
+for语句有两种结构，一种是跟C/C++类似的结构，另一种是跟python类似的range结构(用于遍历字符串、数组、字典等可迭代的结构，一般来说，迭代时会返回两个元素，一个是元素的位置或者键，另一个是对应的值)：
+
+``` go
+// 结构一
+for i := 0; i < 10; i++ {
+    fmt.Println(i)
+}
+
+// 结构二
+for k, v := range map[int]string{1:"a", 2:"b", 3:"c"} {
+    fmt.Printf("%d => %s", k, v)
+}
+```
+
+### 5 数组和对象(字典)
 
 为了表示一系列相同类型的元素，数组也是一门语言不可缺少的类型。
 
@@ -87,7 +137,7 @@ delete(a, 1)
 val, ok := a[2]
 ```
 
-### 7 函数
+### 6 函数
 
 ``` go
 func my_func(para1 string, para2 string) string {
@@ -95,17 +145,21 @@ func my_func(para1 string, para2 string) string {
 }
 ```
 
-### 8 其它
+### 7 输入输出
+
+### 8 异常处理
+
+### 9 其它
 
 除了以上的内容，go语言中还包含自身的一些特性：
 
+* 结构体
+* 接口
+* 指针
 * channel
-* 结构体、接口、指针
-* 
+* defer
 
-#### 8.1 channel
-
-#### 8.2 结构体
+#### 9.1 结构体
 
 go中的结构体与其他的编译型语言类似，也有着封装属性和操作的功能。
 另外，结构体有两个特点：结构体不是引用类型，是值类型；结构体不能继承。
@@ -139,3 +193,32 @@ var s Student = Student{Name: "jack", Gender: "male"}
 ``` go
 s.Grow()
 ```
+
+#### 9.2 接口
+
+#### 9.3 指针
+
+#### 9.4 channel
+
+#### 9.5 defer
+
+defer语句用于在退出函数时执行一定的动作，该动作通常时一些清理操作，类似于推出函数时自动调用某些对象的析构函数，跟python中引入的with类似。因此，谈到defer语句最常用的场景就时文件操作完毕后的关闭动作:
+
+``` go
+func readFile(path string) ([]byte, error) {
+    file, err := os.Open(path)
+    if err != nil {
+        return nil, err
+    }
+    defer file.Close()
+    return ioutil.ReadAll(file)
+}
+```
+
+在函数执行结束时，无论是否发生异常，都会执行file.Close()
+
+使用defer要注意三点：
+
+* 有多个defer时，执行顺序跟代码顺序相反
+* 执行到defer时，defer后的表达式并不会真正执行，只有当函数正常退出或者被剥夺控制权时才会执行，但是其中的表达式的参数却是在执行defer语句时就会求值
+* defer语句后面接匿名函数时，要避免闭包常见的坑：当匿名函数使用defer语句外的变量时，需要将该变量作为参数，如果直接使用，得到的结果会并非预期
