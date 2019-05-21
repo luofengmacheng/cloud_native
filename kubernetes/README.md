@@ -5,3 +5,7 @@
 ### 2 [kubernetes架构与功能](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/structure_function.md)
 
 ### 3 [kubernetes中的Namespace和pod](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/pod.md)
+
+### 4 [kubernetes中的ReplicationController和ReplicaSet](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/rc_rs.md)
+
+
