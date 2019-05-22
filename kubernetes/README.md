@@ -6,6 +6,6 @@
 
 ### 3 [kubernetes中的Namespace和pod](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/pod.md)
 
-### 4 [kubernetes中的ReplicationController和ReplicaSet](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/rc_rs.md)
+### 4 [kubernetes中托管pod的方式(ReplicationController、ReplicaSet、DaemonSet、Job、CronJob)](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/rc_rs_ds_job_cronjob.md)
 
 
