@@ -13,3 +13,5 @@
 ### 6 [kubernetes中的卷](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/volume.md)
 
 ### 7 [kubernetes中的ConfigMap和Secret](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/config.md)
+
+### 8 [kubernetes工作原理](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/principle.md)
