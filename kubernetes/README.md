@@ -15,3 +15,7 @@
 ### 7 [kubernetes中的ConfigMap和Secret](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/config.md)
 
 ### 8 [kubernetes工作原理](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/principle.md)
+
+### 9 [面向kubernetes编程](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/k8s_oriented_program.md)
+
+### 10 [kubernetes代码结构](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/code_structure.md)
