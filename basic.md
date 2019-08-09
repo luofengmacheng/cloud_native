@@ -149,6 +149,8 @@ func my_func(para1 string, para2 string) string {
 
 ### 7 输入输出
 
+bufferio.NewWriter
+
 ### 8 异常处理
 
 ### 9 其它
@@ -214,6 +216,8 @@ golang中的指针概念与C/C++一样，表示的也是地址，但是在使用
 
 #### 9.4 channel
 
+管道部分可以参看goroutine部分。
+
 #### 9.5 defer
 
 defer语句用于在退出函数时执行一定的动作，该动作通常时一些清理操作，类似于推出函数时自动调用某些对象的析构函数，跟python中引入的with类似。因此，谈到defer语句最常用的场景就时文件操作完毕后的关闭动作:
@@ -236,3 +240,8 @@ func readFile(path string) ([]byte, error) {
 * 有多个defer时，执行顺序跟代码顺序相反
 * 执行到defer时，defer后的表达式并不会真正执行，只有当函数正常退出或者被剥夺控制权时才会执行，但是其中的表达式的参数却是在执行defer语句时就会求值
 * defer语句后面接匿名函数时，要避免闭包常见的坑：当匿名函数使用defer语句外的变量时，需要将该变量作为参数，如果直接使用，得到的结果会并非预期
+* 当执行defer语句时会将defer语句中的表达式记录下来，当异常发生时也会执行该函数，但是如果异常在defer语句之前发生，则不会执行defer中的语句。
+
+
+go tool tour
+http://docscn.studygolang.com/doc/
