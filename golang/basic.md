@@ -153,6 +153,28 @@ bufferio.NewWriter
 
 ### 8 异常处理
 
+为了处理异常，golang专门引入了一个类型：error。
+
+``` go
+type error interface {
+    Error() string
+}
+```
+
+可以看到error是一个接口，它只有一个方法：Error()，调用error.Error()可以得到错误信息。
+
+为了可以同时返回数据和错误，golang中的函数通常都会返回两个值：一个是返回值，另一个是错误。
+
+``` go
+func hello(i int) (string, error) {
+    if i == 0 {
+        return "", errors.New("invalid param")
+    }
+
+    return fmt.Sprintf("%d", i), nil
+}
+```
+
 ### 9 其它
 
 除了以上的内容，go语言中还包含自身的一些特性：

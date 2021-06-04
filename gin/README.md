@@ -4,6 +4,8 @@
 
 ### 2 [配置文件处理](https://github.com/luofengmacheng/docker_doc/blob/master/gin/config.md)
 
+### 3 [路由](https://github.com/luofengmacheng/docker_doc/blob/master/gin/router.md)
+
 ### 3 [登录(cookie和session)](https://github.com/luofengmacheng/docker_doc/blob/master/gin/login.md)
 
 ### 4 [参数验证](https://github.com/luofengmacheng/docker_doc/blob/master/gin/param_check.md)
