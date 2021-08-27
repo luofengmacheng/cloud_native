@@ -16,6 +16,10 @@
 
 ### 8 [kubernetes工作原理](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/principle.md)
 
-### 9 [面向kubernetes编程](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/k8s_oriented_program.md)
+### 9 [使用kubeadm部署kubernetes集群](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/deploy_with_kubeadm.md)
 
-### 10 [kubernetes代码结构](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/code_structure.md)
+### 10 [面向kubernetes编程](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/k8s_oriented_program.md)
+
+### 11 [将应用装入kubernetes](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/app_containernization.md)
+
+### 12 [kubernetes代码结构](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/code_structure.md)
