@@ -14,12 +14,22 @@
 
 ### 7 [kubernetes中的ConfigMap和Secret](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/config.md)
 
-### 8 [kubernetes工作原理](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/principle.md)
+### 8 [kubernetes中的集群调度](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/schedule.md)
 
-### 9 [使用kubeadm部署kubernetes集群](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/deploy_with_kubeadm.md)
+### 9 [kubernetes中的安全和认证](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/security_and_authentication.md)
 
-### 10 [面向kubernetes编程](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/k8s_oriented_program.md)
+### 10 [kubernetes工作原理](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/principle.md)
 
-### 11 [将应用装入kubernetes](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/app_containernization.md)
+### 11 [面向kubernetes编程](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/k8s_oriented_program.md)
 
-### 12 [kubernetes代码结构](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/code_structure.md)
+### 12 [将应用装入kubernetes](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/app_containernization.md)
+
+### 13 [使用kubeadm部署kubernetes集群](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/deploy_with_kubeadm.md)
+
+### 14 [使用client-go与kubernetes集群交互](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/interact_with_client.md)
+
+### 15 [使用virtual kubelet构建虚拟节点](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/virtual_kubelet.md)
+
+### 16 [kubernetes中的网络](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/network.md)
+
+### 17 [kubernetes代码结构](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/code_structure.md)

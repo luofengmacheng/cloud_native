@@ -38,6 +38,9 @@ exclude=kubelet kubeadm kubectl
 * kubectl k8s客户端
 * kubelet 监控容器运行的agent
 * kubeadm 安装工具
+```
+yum install -y libseccomp cri-tools kubeadm-$k8s_ver kubectl-$k8s_ver kubelet-$k8s_ver --disableexcludes=kubernetes
+```
 
 ### 3 准备镜像
 * kube-apiserver
