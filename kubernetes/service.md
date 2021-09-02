@@ -215,6 +215,10 @@ ipvs的方式的流程比iptables一样，只是将iptables的规则替换为ipv
 
 ipvs相比iptables的优势在于，当服务数量很多(例如>10000)时，iptables的性能会下降，而ipvs由于使用了内核哈希表，性能依然很高。
 
+但是，ipvs在高性能场景下也会有其他问题：
+
+[深入kube-proxy ipvs模式的conn_reuse_mode问题](https://cloud.tencent.com/developer/article/1832908)
+
 ### 5 探针(Probe)
 
 前面已经介绍过存活探针，其实在k8s中还有另一种探针，用于表明容器已经准备好接收请求的就绪探针。存活探针和就绪探针在配置的使用过程基本一样：
