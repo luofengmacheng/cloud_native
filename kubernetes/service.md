@@ -122,7 +122,7 @@ spec:
 服务的类型除了上面的ClusterIP，还有另外的三种类型：
 
 * NodePort 每个集群节点都相当于是服务的代理，每个集群节点都会打开一个端口，当访问某个节点的该端口时，k8s会将流量重定向到Endpoint中的其中一个实例。那么，就可以通过三种方式访问后端的实例：通过ClusterIP的方式；通过pod的IP和端口；通过集群的节点和专用端口。
-* LoadBalancer 这种方式是NodePort的一种扩展，会在每个节点前端再添加一个负载均衡器，但是这种方式通常需要云厂商支持才行，这里不做过多介绍
+* LoadBalancer 这种方式是NodePort的一种扩展，会在k8s集群前端再加一个云厂商提供的负载均衡器，负载均衡器会将收到的请求煮饭给后端的k8s的Node的NodePort端口
 * Ingress
 
 1 NodePort
@@ -152,14 +152,24 @@ curl ClusterIP:8080
 curl kubenode:31234
 ```
 
+上面的服务的yaml文件中有3个端口：
+
+* port：ClusterIP的端口
+* targetPort：对应到容器中应用的端口
+* nodePort：node节点上启动的端口，由kube-proxy启动
+
 2 Ingress
 
 Ingress相比于前面的NodePort和LoadBalancer的主要区别在于：
 
 * 虽然NodePort可以通过节点对服务进行负载均衡，但是还是需要在节点前面额外添加一层负载均衡器以应对节点的异常，实际中不会使用这种方式
-* LoadBalancer需要云平台的支持，导致与云平台有一定的耦合，并且每个服务都需要负载均衡器以及共有IP
+* LoadBalancer需要云平台的支持，导致与云平台有一定的耦合，并且每个服务都需要负载均衡器以及公有IP
 
 Ingress是k8s原生支持的负载均衡器，并且能够代理多种服务，是实际使用最多的提供服务的方式。
+
+其实Ingress就是将常用的负载均衡软件(例如，nginx、haproxy)部署到k8s，这样做的好处是：
+
+kube-proxy启动一个端口就可以处理很多服务的请求，因为请求的转发可以通过路由配置处理，相当于一个7层负载均衡器
 
 ### 4 服务的实现
 
