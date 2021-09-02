@@ -217,7 +217,7 @@ ipvs相比iptables的优势在于，当服务数量很多(例如>10000)时，ipt
 
 但是，ipvs在高性能场景下也会有其他问题：
 
-[深入kube-proxy ipvs模式的conn_reuse_mode问题](https://cloud.tencent.com/developer/article/1832908)
+* [深入kube-proxy ipvs模式的conn_reuse_mode问题](https://cloud.tencent.com/developer/article/1832908)
 
 ### 5 探针(Probe)
 
