@@ -161,7 +161,51 @@ Ingress相比于前面的NodePort和LoadBalancer的主要区别在于：
 
 Ingress是k8s原生支持的负载均衡器，并且能够代理多种服务，是实际使用最多的提供服务的方式。
 
-### 4 探针(Probe)
+### 4 服务的实现
+
+通过上面的介绍，实现服务的思路是：
+
+* 维护服务VIP与后端pod的转发规则
+* 将请求转发到后端pod
+
+在k8s的实现过程中，服务的实现经历了3个阶段：
+
+* userspace
+* iptables
+* ipvs
+
+#### 4.1 用户空间
+
+![userspace](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/pics/service_userspace.png)
+
+kube-proxy通过apiserver监听服务的状态变化，发现用户创建了redis服务，后端有2个pod，于是kube-proxy在本机起一个随机端口，然后在iptables中创建2条规则：
+
+* redis_svc_ip:port -> kube-proxy:port 将redis的VIP转发到本机proxy的某个端口
+* kube-proxy:port -> Pod-redis-1 & Pod-redis-2 将本机的某个端口转发到后端的redis的Pod
+
+当集群中的其他Pod访问redis的VIP时，请求就会通过kube-proxy转发到后端的redis的Pod。
+
+kube-proxy的作用是：负责监听服务和Pod的状态，维护iptables规则，并且服务的转发也通过了kube-proxy的端口
+
+#### 4.2 iptables
+
+![iptables](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/pics/service_iptables.png)
+
+kube-proxy通过apiserver监听服务的状态变化，发现用户创建了redis服务，后端有2个pod，于是kube-proxy在iptables中创建1条规则：
+
+* redis_svc_ip:port -> Pod-redis-1 & Pod-redis-2
+
+当集群中的其他Pod访问redis的VIP时，请求就会直接转发给后端的redis的Pod。
+
+kube-proxy的作用是：负责监听服务和Pod的状态，维护iptables规则，但是服务的转发没有经过kube-proxy，而是直接在内核态进行转发，性能比userspace的方式更高。
+
+#### 4.3 ipvs
+
+ipvs的方式的流程比iptables一样，只是将iptables的规则替换为ipvs。
+
+ipvs相比iptables的优势在于，当服务数量很多(例如>10000)时，iptables的性能会下降，而ipvs由于使用了内核哈希表，性能依然很高。
+
+### 5 探针(Probe)
 
 前面已经介绍过存活探针，其实在k8s中还有另一种探针，用于表明容器已经准备好接收请求的就绪探针。存活探针和就绪探针在配置的使用过程基本一样：
 

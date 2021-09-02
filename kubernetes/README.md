@@ -24,12 +24,14 @@
 
 ### 12 [将应用装入kubernetes](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/app_containernization.md)
 
-### 13 [使用kubeadm部署kubernetes集群](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/deploy_with_kubeadm.md)
+### 13 [kubernetes二次开发](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/secondary_development.md)
 
-### 14 [使用client-go与kubernetes集群交互](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/interact_with_client.md)
+### 14 [使用kubeadm部署kubernetes集群](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/deploy_with_kubeadm.md)
 
-### 15 [使用virtual kubelet构建虚拟节点](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/virtual_kubelet.md)
+### 15 [使用client-go与kubernetes集群交互](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/interact_with_client.md)
 
-### 16 [kubernetes中的网络](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/network.md)
+### 16 [使用virtual kubelet构建虚拟节点](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/virtual_kubelet.md)
 
-### 17 [kubernetes代码结构](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/code_structure.md)
+### 17 [kubernetes中的网络](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/network.md)
+
+### 18 [kubernetes代码结构](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/code_structure.md)
