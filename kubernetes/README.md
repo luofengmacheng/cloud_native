@@ -30,7 +30,7 @@
 
 ### 15 [使用client-go与kubernetes集群交互](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/interact_with_client.md)
 
-### 16 [使用virtual kubelet构建虚拟节点](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/virtual_kubelet.md)
+### 16 [使用virtual-kubelet扩展k8s](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/virtual_kubelet.md)
 
 ### 17 [kubernetes中的网络](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/network.md)
 
