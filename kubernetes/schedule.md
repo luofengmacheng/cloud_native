@@ -89,3 +89,29 @@ tolerations:
 `Pod.spec.nodeName`：指定节点名称，Pod就会只运行在该节点上。
 
 `Pod.spec.nodeSelector`：指定节点带有的标签，Pod就只会运行在带有这些标签的节点上。
+
+### 5 节点驱逐
+
+当需要对节点进行维护时，需要让k8s不将Pod调度到该节点，k8s提供三种驱逐节点的操作：
+
+* cordon
+* drain
+* delete
+
+#### 5.1 cordon
+
+`kubectl cordon NodeName`
+
+将节点设置为SchedulingDisabled，后续新创建的Pod不会再调度到该节点，原来跑在上面的Pod仍可以对外提供服务。可以使用uncordon恢复调度。
+
+#### 5.2 drain
+
+`kubectl drain NodeName`
+
+将节点设置为SchedulingDisabled，后续新创建的Pod不会再调度到该节点，并且，原来跑在上面的Pod会被优雅终止。可以使用uncordon恢复调度。
+
+#### 5.3 delete
+
+`kubectl delete node NodeName`
+
+驱逐节点上的Pod，在其他节点上重建，然后将该节点从集群中删除。如果需要重新加入集群，需要将kubelet进程重启。
