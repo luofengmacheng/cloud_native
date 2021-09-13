@@ -124,3 +124,113 @@ kubectl config set-credentials --client-certificate=证书 --client-key=私钥 -
 
 kubectl config set-context --cluster=$CLUSTER_NAME --user=$USERNAME --namespace=$NAMESPACE
 ```
+
+### 6 公钥、私钥、签名、证书
+
+```
+加密是为了保证数据的安全性
+签名是为了保证数据的完整性
+证书是为了保证公钥的完整性
+```
+
+加密一般分为对称加密和非对称加密：
+
+* 对称加密指的是通信的双方用`相同的密钥`对数据进行加解密：明文+密钥->密文，密文+密钥->明文
+* 非对称加密指的是通信的双方用`不同的密钥`对数据进行加解密：用公钥加密的密文只能用私钥解密，用私钥解密的密文只能用公钥解密
+
+对称加密的好处在于简单并且效率高，不好的当然就是密钥的分发问题。非对称加密的好处在于安全性高，不好的就是加解密效率比对称加密低。
+
+签名就是对通信的数据打上标签，可以防止数据被篡改以及保证数据的真实性。
+
+生成签名的过程：
+
+* 对数据计算HASH值
+* 用私钥对HASH值加密，生成签名
+* 将签名放在消息后面一起发送
+
+验证签名的过程：
+
+* 用公钥对数据中的签名进行解密，得到HASH1
+* 对数据中的正文计算哈希值，得到HASH2
+* 比较HASH1和HASH2，如果相同，则验证成功
+
+生成证书的过程：
+
+* 服务器将公钥A给CA
+* CA用自己的私钥B对公钥A加密，生成数字签名
+* CA把公钥A、数字签名、服务器信息整合生成证书
+* CA将证书分发给服务器
+
+通过上面生成证书的过程可以知道，证书主要包含两部分信息：自己的公钥和数字签名(只有用CA的公钥才能对数字签名进行验证)。
+
+验证证书的过程：
+
+* 当客户端与服务端通信时，服务端将自己的证书发给客户端
+* 客户端收到服务端发送的证书，需要从证书中得到服务端的公钥。为了得到公钥，又需要验证公钥没有被篡改，就只能用签发证书的CA的公钥进行验证。
+* 假设客户端已经有签发证书的CA的公钥，用该公钥对证书进行解密并计算哈希值，然后与证书中的公钥计算的哈希值进行对比，如果相同，说明公钥没有被篡改
+* 客户端就得到了服务端的公钥，然后客户端在发送数据时就使用服务端的公钥，服务端返回收据时就使用服务端的私钥
+
+根证书：
+
+上面验证证书的过程中，有个问题没有解答：客户端如何得到签发证书的CA的公钥？
+
+举个例子，当访问`www.baidu.com`时，返回了百度的证书，为了得到并验证百度的公钥，又必须有签发给百度证书的GlobalSign Organization Validation CA机构的公钥，因此，客户端又必须有GlobalSign Organization Validation CA机构的证书，从而可以从中提取出百度的公钥。但是，怎么去验证GlobalSign Organization Validation CA的证书呢？又必须有签发给GlobalSign Organization Validation CA的证书公钥，即GlobalSign Root CA的公钥。这就构成了一个信任链，那么这个链在哪里结束呢？就是根证书，根证书是由权威机构给自己颁发的证书。
+
+当前，权威的办法根证书的机构并不多，可以认为，电脑中已经默认保存了大部分的权威机构的根证书，也就是这些证书是可以信任的。然后再用这些根证书去验证下面的机构或者网站的证书。
+
+### 7 HTTPS
+
+前面提到过对称加密和非对称加密的优缺点，而HTTPS就刚好结合了两者的优点：
+
+* 对称加密的高效性
+* 非对称加密的安全性
+
+#### 7.1 单向认证
+
+单向认证就是我们通常访问网站的方式：只验证服务端是否是安全的。
+
+认证流程：
+
+* 客户端建立HTTPS请求
+* 服务端返回证书
+* 客户端通过上面的验证流程从证书中提取并验证服务端的公钥
+* 客户端生成随机数R，用服务端的公钥加密，发送给服务端
+* 服务端使用私钥解密得到随机数R
+* 客户端和服务端使用随机数R作为对称密钥进行通信
+
+上述过程只验证服务端是否安全，而没有验证客户端。
+
+#### 7.2 双向认证
+
+双向认证既需要验证服务端，又需要验证客户端。单向认证只为服务端生成了私钥和证书，而双向认证就需要为客户端和服务端分别生成私钥和证书。
+
+认证流程：
+
+* 客户端建立HTTPS请求
+* 服务端返回证书server.crt
+* 客户端验证证书并从中提取出服务端的公钥server.pub
+* 客户端将自己的证书client.crt发送给服务端
+* 服务端验证证书并从中提取出客户端的公钥client.pub
+* 客户端生成随机数R，使用服务端公钥加密后发送给服务端
+* 服务端使用私钥解密得到随机数R
+* 客户端和服务端使用随机数R作为对称密钥进行通信
+
+### 8 kubernetes中的证书
+
+kubernetes中的所有组件通信时都采用HTTPS双向认证，而部署时不可能为他们申请证书，因此，在部署kuberentes时通常都是先生成自签名证书，然后用该证书作为根证书，后续的证书都通过它签发。
+
+```
+mkdir -p /etc/crt
+pushd /etc/crt
+openssl genrsa -out cakey.pem
+openssl req -new -x509 -key cakey.pem -out cacert.pem -subj '/CN=Mirror CA/O=UCloud/ST=GuangDong/L=Shenzhen/C=CN' -days 3650
+cat cacert.pem >>/etc/pki/tls/certs/ca-bundle.crt
+openssl genrsa -out k8s.io.key 2048
+openssl req -new -key k8s.io.key -out k8s.io.csr -subj '/CN=*.k8s.io/O=UCloud/ST=GuangDong/L=Shenzhen/C=CN'
+
+openssl x509 -req -in k8s.io.csr -CA cacert.pem -CAkey cakey.pem -CAcreateserial -out k8s.io.crt -days 3650 -config ./openssl.cfg -extensions k8s.io
+popd
+
+grep -c "dl.k8s.io" /etc/hosts >/dev/null || echo "127.0.0.1 dl.k8s.io" >>/etc/hosts
+```
+
