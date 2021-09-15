@@ -39,9 +39,9 @@ spec:
 
 服务发现即通过某种方式访问服务，根据服务的访问方向，在k8s中有三种方式：
 
-* 在`集群内部`连接`集群内部`的服务
-* 在`集群内部`连接`集群外部`的服务
-* 在`集群外部`连接`集群内部`的服务
+* 在`集群内部`连接`集群内部`的服务：ClusterIP
+* 在`集群内部`连接`集群外部`的服务：ExternalName
+* 在`集群外部`连接`集群内部`的服务：NodePort、LoadBalancer、Ingress
 
 当然，就不会有在集群外部连接集群外部的服务了，不过这种方式也可以通过k8s做下代理。
 
@@ -122,8 +122,8 @@ spec:
 服务的类型除了上面的ClusterIP，还有另外的三种类型：
 
 * NodePort 每个集群节点都相当于是服务的代理，每个集群节点都会打开一个端口，当访问某个节点的该端口时，k8s会将流量重定向到Endpoint中的其中一个实例。那么，就可以通过三种方式访问后端的实例：通过ClusterIP的方式；通过pod的IP和端口；通过集群的节点和专用端口。
-* LoadBalancer 这种方式是NodePort的一种扩展，会在k8s集群前端再加一个云厂商提供的负载均衡器，负载均衡器会将收到的请求煮饭给后端的k8s的Node的NodePort端口
-* Ingress
+* LoadBalancer 这种方式是NodePort的一种扩展，会在k8s集群前端再加一个云厂商提供的负载均衡器，负载均衡器会将收到的请求转发给后端的k8s的Node的NodePort端口
+* Ingress：在集群中部署负载均衡器，并通过NodePort提供访问
 
 1 NodePort
 
@@ -173,6 +173,35 @@ kube-proxy启动一个端口就可以处理很多服务的请求，因为请求�
 
 ### 4 服务的实现
 
+#### 4.1 /etc/resolv.conf
+
+当在Pod中访问服务名时，会将服务名当作域名进行解析，而域名解析过程中就会用到/etc/resolv.conf配置文件。
+
+/etc/resolv.conf配置文件包含以下几个部分：
+
+* nameserver DNS服务器，可以指定多个DNS服务器，当且仅当前一个域名服务器无响应时才访问下一个
+* search domain1 domain2 domain3，当访问的域名无法解析时，会在域名后面加上domain1，再次尝试解析，依此进行尝试解析
+* domain domain.com，默认域名，也就是当search没有设置时，search=domain，需要注意的是：search和domain不会同时配置
+
+在Pod中通常都会配置nameserver和search：
+
+* nameserver配置为DNS服务器的地址，也就是CoreDNS的地址
+* search配置为服务域名，例如，`default.svc.cluster.local svc.cluster.local cluster.local`
+
+因此，当访问service_name服务时，会尝试向CoreDNS发送解析service_name.default.svc.cluster.local域名的请求，当没有响应时，会尝试解析service_name.svc.cluster.local。
+
+#### 4.2 CoreDNS
+
+CoreDNS是一个使用golang开发的域名服务器，域名服务器的工作方式就是根据请求的域名返回对应的IP地址。
+
+因此，CoreDNS只需要得到Service和ClusterIP的对应关系即可。
+
+CoreDNS通过client-go的informer机制监视k8s中的Service和ClusterIP的变化，并保存这些数据用于域名解析，当收到域名解析的请求时，查询内部数据结构就可以得到对应的ClusterIP。
+
+有了CoreDNS，并修改/etc/resolv.conf，就能够实现将ServiceName->ServiceIp的映射关系。当请求到达ServiceIP该怎么办呢？那就涉及到服务转发。
+
+#### 4.3 服务转发
+
 通过上面的介绍，实现服务的思路是：
 
 * 维护服务VIP与后端pod的转发规则
@@ -184,7 +213,7 @@ kube-proxy启动一个端口就可以处理很多服务的请求，因为请求�
 * iptables
 * ipvs
 
-#### 4.1 用户空间
+#### 4.3.1 用户空间
 
 ![userspace](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/pics/service_userspace.png)
 
@@ -197,7 +226,7 @@ kube-proxy通过apiserver监听服务的状态变化，发现用户创建了redi
 
 kube-proxy的作用是：负责监听服务和Pod的状态，维护iptables规则，并且服务的转发也通过了kube-proxy的端口
 
-#### 4.2 iptables
+#### 4.3.2 iptables
 
 ![iptables](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/pics/service_iptables.png)
 
@@ -209,7 +238,7 @@ kube-proxy通过apiserver监听服务的状态变化，发现用户创建了redi
 
 kube-proxy的作用是：负责监听服务和Pod的状态，维护iptables规则，但是服务的转发没有经过kube-proxy，而是直接在内核态进行转发，性能比userspace的方式更高。
 
-#### 4.3 ipvs
+#### 4.3.3 ipvs
 
 ipvs的方式的流程比iptables一样，只是将iptables的规则替换为ipvs。
 
@@ -218,6 +247,21 @@ ipvs相比iptables的优势在于，当服务数量很多(例如>10000)时，ipt
 但是，ipvs在高性能场景下也会有其他问题：
 
 * [深入kube-proxy ipvs模式的conn_reuse_mode问题](https://cloud.tencent.com/developer/article/1832908)
+
+#### 4.4 NodePort
+
+对于ClusterIP而言，通过上面的iptables或者ipvs就可以实现服务的转发。但是，对于NodePort、LoadBalancer、Ingress而言，情况有所不同。
+
+NodePort相当于对ClusterIP的一种扩展，当创建NodePort服务时，会创建一个ClusterIP服务，然后在Node上面由kube-proxy开启外部服务端口，此时可以通过两种方式访问：
+
+* 外部：Node:NodePort
+* 内部：ServiceName、ClusterIp:ClusterPort
+
+当kube-proxy收到请求后，通过访问的Node的Port就可以知道访问的服务，然后映射成ClusterIp:ClusterPort，再走原来的流程即可。
+
+#### 4.5 LoadBalancer
+
+#### 4.6 Ingress
 
 ### 5 探针(Probe)
 

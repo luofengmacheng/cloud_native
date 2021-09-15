@@ -30,8 +30,12 @@
 
 ### 15 [使用client-go与kubernetes集群交互](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/interact_with_client.md)
 
-### 16 [使用virtual-kubelet扩展k8s](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/virtual_kubelet.md)
+### 16 [kubernetes控制器模式](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/controller_pattern.md)
 
-### 17 [kubernetes中的网络](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/network.md)
+### 17 [使用virtual-kubelet扩展k8s](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/virtual_kubelet.md)
 
-### 18 [kubernetes代码结构](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/code_structure.md)
+### 18 [使用CloudProvider对接云厂商的LB](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/cloudprovider.md)
+
+### 19 [kubernetes中的网络](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/network.md)
+
+### 20 [kubernetes代码结构](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/code_structure.md)

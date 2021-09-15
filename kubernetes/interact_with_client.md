@@ -10,7 +10,7 @@ client-go是kubernetes官方提供的kubernetes的api库，通过它可以调用
 * 生成对应的资源对象
 * 通过客户端调用接口操作资源对象
 
-调用kubernetes.NewForConfig(c *rest.Config)根据配置对象创建客户端，为了生成rest.Config，有两种方式：一种是调用clientcmd.BuildConfigFromFlags("", *kubeconfig)直接从配置文件读取；另一种是调用clientcmd.RESTConfigFromKubeConfig()从参数的字符串读取。
+调用`kubernetes.NewForConfig(c *rest.Config)`根据配置对象创建客户端，为了生成rest.Config，有两种方式：一种是调用`clientcmd.BuildConfigFromFlags("", *kubeconfig)`直接从配置文件读取；另一种是调用clientcmd.RESTConfigFromKubeConfig()从参数的字符串读取。
 
 client-go对资源的操作接口分成两种形式：一种是静态的，操作时需要提供明确的结构体数据；另一种是动态的，操作时只需要提供一个`map[string]interface{}`的对象。在使用kubectl进行资源的创建、更新、删除操作时，只需要提供yaml文件即可，k8s自己会去解析字段的值，因此，在进行资源的CUD时，客户端只需要提供yaml文件，而资源的查询操作，由于需要获取某个字段的值，而且不同的资源的结构也是不同的，使用动态接口就不太方便。
 
