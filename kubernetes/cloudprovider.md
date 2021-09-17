@@ -153,3 +153,5 @@ select {
 CloudProvider的功能本来是提供给云厂商的LB接入的，但是由于跟k8s的核心代码耦合比较紧。为了减小跟核心代码的耦合，对CloudProvider进行重构，并且独立出来，独立出来的部分就称为Cloud Controller Manager(CCM)。
 
 其实新的名字可能跟贴近该模块的功能：云控制器管理器，用于管理云厂商的控制器。
+
+### 4 QingCloud的
