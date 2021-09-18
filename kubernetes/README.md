@@ -38,4 +38,6 @@
 
 ### 19 [kubernetes中的网络](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/network.md)
 
-### 20 [kubernetes代码结构](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/code_structure.md)
+### 20 [从kubernetes Dashboard的yaml文件看应用的部署](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/dashboard_yaml.md)
+
+### 21 [kubernetes代码结构](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/code_structure.md)
