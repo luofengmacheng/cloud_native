@@ -30,14 +30,18 @@
 
 ### 15 [使用client-go与kubernetes集群交互](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/interact_with_client.md)
 
-### 16 [kubernetes控制器模式](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/controller_pattern.md)
+### 16 [kubernetes中的控制器](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/controller.md)
 
-### 17 [使用virtual-kubelet扩展k8s](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/virtual_kubelet.md)
+### 17 [使用virtual-kubelet扩展kubernetes](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/virtual_kubelet.md)
 
 ### 18 [使用CloudProvider对接云厂商的LB](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/cloudprovider.md)
 
-### 19 [kubernetes中的网络](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/network.md)
+### 19 [使用operator扩展kubernetes](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/operator.md)
 
-### 20 [从kubernetes Dashboard的yaml文件看应用的部署](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/dashboard_yaml.md)
+### 20 [kubernetes中的网络](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/network.md)
 
-### 21 [kubernetes代码结构](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/code_structure.md)
+### 21 [从kubernetes Dashboard的yaml文件看应用的部署](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/dashboard_yaml.md)
+
+### 22 [kubernetes在边缘计算场景中的应用](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/edge.md)
+
+### 23 [kubernetes代码结构](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/code_structure.md)
