@@ -249,13 +249,6 @@ func (p *ACIProvider) createContainerGroup(ctx context.Context, podNS, podName s
 
 CreatePod()首先准备创建ACI容器组的资源，然后调用createContainerGroup()，该函数对接口调用再次封装，然后调用了aciClient的CreateContainerGroup()创建ACI容器组。而CreateContainerGroup()就是调用ACI的API接口创建容器组。PodLifecycleHandler中的函数实现方式都类似，只需要对接后端的接口即可。
 
-Provider中剩下logs和exec则比较麻烦：
-
-* GetContainerLogs 读取日志，如果需要支持`-f`选项就比较麻烦
-* RunInContainer 执行命令，需要实时将命令的结果传送回来
-
-上面两个函数都需要使用websocket实时回传数据，这个在这里就是另一个问题，这里不做过多介绍。
-
 实现了Provider接口，剩下的只需实现PodNotifier中的NotifyPods()。
 
 NotifyPods()用于异步通知Pod的状态变化。设想下k8s展示Pod状态的实现，k8s如何知道Pod的状态呢？一种方式是k8s定时调用GetPods()接口就得到当前节点的所有Pod，当Node和Pod较多时，资源消耗还是有些多的。另一种方式就是，节点通过比较k8s认为节点有的Pod和ACI上实际有的容器组，就得到应该更新哪些Pod的状态。
@@ -398,3 +391,130 @@ func (pt *PodsTracker) cleanupDanglingPods(ctx context.Context) {
 * PodController通过informer机制监听Pod的变化，然后执行Pod的增删改查操作
 * virtual kubelet提供http接口，当用户执行`kubectl logs/exec`时，就调用对应的函数，然后会调用Provider接口中对应的函数，这里主要难点在于需要实时将数据回传，展示给用户
 * PodNotifier提供了异步更新Pod的接口，apiserver为了让etcd中Pod的数据与节点上Pod的数据保持一致，会定时调用节点的接口查询Pod的状态，当节点和Pod比较多时，比较消耗apiserver的资源。为了节省资源，节点会比较k8s中的Pod的数据和后端实际Pod的数据，如果发现有不一致(k8s中有该Pod，后端没有；k8s中没有该Pod，后端有)，则执行状态的更新或者后端容器组的操作
+
+#### 关于logs和exec
+
+Provider中剩下logs和exec则比较麻烦：
+
+* GetContainerLogs 读取日志，如果需要支持`-f`选项就比较麻烦
+* RunInContainer 执行命令，需要实时将命令的结果传送回来
+
+azure-aci中的logs不支持`-f`选项，因此，只需要调用ACI容器组的接口，获取日志就行。而exec则需要使用websocket进行实时的命令传送和结果回传。
+
+具体的数据流向如下：
+
+![kubectl exec](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/pics/virtual_kubelet2.png)
+
+当用户在终端输入命令时，首先kubectl会先拿到命令，然后再交给kube-apiserver，kube-apiserver再将命令发送给kubelet，在这里就是virtual kubelet。那么，VK要做的就是读取命令，然后将命令发送给后端的容器组去执行，容器组执行完成后，再将结果推送给VK，VK则将结果推送给kube-apiserver，kube-apiserver将结果推送给kubectl，kubectl打印出来。这时候，用户看到的就类似于输入命令，然后输出结果。
+
+而这些组件之间的数据流转需要实时推送，比较适合的方式就是使用websocket，这些组件之间通过websocket连接，连接之后，通过readmessage()和writemessage()进行数据传输。
+
+从VK的角度看，需要做的就是：
+
+* 使用websocket连接后端的容器组
+* 从kube-apiserver读取数据，然后发送给后端的容器组
+* 从后端的容器组接收数据，并输出给kube-apiserver
+
+``` golang
+// api.AttachIO是个接口，Stdin()和Stdout()分别返回标准输入和标准输出
+// VK需要从Stdin()中读取数据，然后写给后端的容器组，
+// 同时，需要接收容器组返回的数据，然后发送给Stdout()
+func (p *ACIProvider) RunInContainer(ctx context.Context, namespace, name, container string, cmd []string, attach api.AttachIO) error {
+    out := attach.Stdout()
+    if out != nil {
+        defer out.Close()
+    }
+
+    // 根据namespace和name获取容器组
+    cg, err := p.getContainerGroup(ctx, namespace, name)
+    if err != nil {
+        return err
+    }
+
+    // 设置终端默认大小
+    size := api.TermSize{
+        Height: 60,
+        Width:  120,
+    }
+
+    resize := attach.Resize()
+    if resize != nil {
+        select {
+        case size = <-resize:
+        case <-ctx.Done():
+            return ctx.Err()
+        }
+    }
+
+    // 获取ACI容器组的websocket的URI和密码
+    ts := aci.TerminalSizeRequest{Height: int(size.Height), Width: int(size.Width)}
+    xcrsp, err := p.aciClient.LaunchExec(p.resourceGroup, cg.Name, container, strings.Join(cmd, " "), ts)
+    if err != nil {
+        return err
+    }
+
+    wsURI := xcrsp.WebSocketURI
+    password := xcrsp.Password
+
+    // 连接ACI的websocket，并输入密码
+    c, _, _ := websocket.DefaultDialer.Dial(wsURI, nil)
+    if err := c.WriteMessage(websocket.TextMessage, []byte(password)); err != nil {
+        panic(err)
+    }
+
+    defer c.Close()
+
+    in := attach.Stdin()
+    if in != nil {
+        // 将读取命令并写入后端的容器组的逻辑放在后台的goroutine
+        go func() {
+            for {
+                // 如果父协程结束，直接退出
+                select {
+                case <-ctx.Done():
+                    return
+                default:
+                }
+
+                // 读取kube-apiserver发送的命令，然后发送给后端的容器组
+                var msg = make([]byte, 512)
+                n, err := in.Read(msg)
+                if err != nil {
+                    // Handle errors
+                    return
+                }
+                if n > 0 {
+                    if err := c.WriteMessage(websocket.BinaryMessage, msg[:n]); err != nil {
+                        panic(err)
+                    }
+                }
+            }
+        }()
+    }
+
+    if out != nil {
+        // 将接收容器组数据并写到kube-apiserver的逻辑放在前台任务
+        for {
+            // 如果父携程结束，则推出循环
+            select {
+            case <-ctx.Done():
+                break
+            default:
+            }
+
+            // 从容器组读取数据，然后发送给kube-apiserver
+            _, cr, err := c.NextReader()
+            if err != nil {
+                break
+            }
+            if _, err := io.Copy(out, cr); err != nil {
+                panic(err)
+            }
+        }
+    }
+
+    return ctx.Err()
+}
+```
+
+从上面的实现上看，VK的角色是kubelet，用于连接kube-apiserver和Pod，因此，如果需要实时通信，就需要用websocket分别连接两端，作为桥梁对两边的数据进行中转。

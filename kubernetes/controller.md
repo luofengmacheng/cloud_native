@@ -243,3 +243,7 @@ func main() {
 1 [client-go under the hood](https://github.com/kubernetes/sample-controller/blob/master/docs/controller-client-go.md)
 
 2 [client-go Examples](https://github.com/kubernetes/client-go/tree/master/examples)
+
+3 [k8s-client-go demo](https://github.com/owenliang/k8s-client-go)
+
+4 [writing controllers](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-api-machinery/controllers.md)

@@ -136,7 +136,7 @@ kubectl config set-context --cluster=$CLUSTER_NAME --user=$USERNAME --namespace=
 加密一般分为对称加密和非对称加密：
 
 * 对称加密指的是通信的双方用`相同的密钥`对数据进行加解密：明文+密钥->密文，密文+密钥->明文
-* 非对称加密指的是通信的双方用`不同的密钥`对数据进行加解密：用公钥加密的密文只能用私钥解密，用私钥解密的密文只能用公钥解密
+* 非对称加密指的是通信的双方用`不同的密钥`对数据进行加解密：用公钥加密的密文只能用私钥解密，用私钥加密的密文只能用公钥解密
 
 对称加密的好处在于简单并且效率高，不好的当然就是密钥的分发问题。非对称加密的好处在于安全性高，不好的就是加解密效率比对称加密低。
 
@@ -176,7 +176,7 @@ kubectl config set-context --cluster=$CLUSTER_NAME --user=$USERNAME --namespace=
 
 举个例子，当访问`www.baidu.com`时，返回了百度的证书，为了得到并验证百度的公钥，又必须有签发给百度证书的GlobalSign Organization Validation CA机构的公钥，因此，客户端又必须有GlobalSign Organization Validation CA机构的证书，从而可以从中提取出百度的公钥。但是，怎么去验证GlobalSign Organization Validation CA的证书呢？又必须有签发给GlobalSign Organization Validation CA的证书公钥，即GlobalSign Root CA的公钥。这就构成了一个信任链，那么这个链在哪里结束呢？就是根证书，根证书是由权威机构给自己颁发的证书。
 
-当前，权威的办法根证书的机构并不多，可以认为，电脑中已经默认保存了大部分的权威机构的根证书，也就是这些证书是可以信任的。然后再用这些根证书去验证下面的机构或者网站的证书。
+当前，权威的颁发根证书的机构并不多，可以认为，电脑中已经默认保存了大部分的权威机构的根证书，也就是这些证书是可以信任的。然后再用这些根证书去验证下面的机构或者网站的证书。
 
 ### 7 HTTPS
 
