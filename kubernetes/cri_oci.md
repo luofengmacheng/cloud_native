@@ -6,7 +6,7 @@
 * runC：实际上是一个命令行工具，与操作系统对接，实现容器的创建和管理
 * [containerd](https://containerd.io/)：Docker从Docker Daemon拆分出containerd，containerd负责容器的各种操作
 * [CRI-O](https://cri-o.io/)：由redhat开源并由社区驱动的专为kubernetes设计的轻量级容器运行时
-* [Kata-containers](https://katacontainers.io/)：
+* [Kata-containers](https://katacontainers.io/)：由OpenStack基金会管理的容器项目，整合了Intel和Clear Containers和Hyper.sh的runV，主要目标是提供虚拟机级别的安全容器，也就是拥有容器的启动速度以及虚拟机的安全
 
 ![docker架构](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/pics/cri_oci_docker.png)
 
