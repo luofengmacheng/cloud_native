@@ -3,12 +3,11 @@
 ### 1 操作系统环境准备
 * 调整内核参数：
 ```
-echo "br_netfilter" >/etc/modules-load.d/k8s.conf
-    
-echo "net.ipv4.ip_forward = 1
-net.bridge.bridge-nf-call-ip6tables = 1
-net.bridge.bridge-nf-call-iptables = 1
-" >/etc/sysctl.d/k8s.conf
+modprobe br_netfilter
+
+sysctl -w net.ipv4.ip_forward=1
+sysctl -w net.bridge.bridge-nf-call-ip6tables=1
+sysctl -w net.bridge.bridge-nf-call-iptables=1
 ```
 * 禁用SELINUX
 ```
@@ -22,22 +21,37 @@ sed -i /swap/d /etc/fstab
 ```
 
 ### 2 安装containerd、kubectl、kubeadm、kubelet
+
+#### 2.1 安装containerd
+
+``` shell
+wget https://github.com/containerd/containerd/releases/download/v1.5.7/containerd-1.5.7-linux-amd64.tar.gz
+tar xvf containerd-1.5.7-linux-amd64.tar.gz
+cp -r bin/* /usr/local/bin/
+containerd config default > /etc/containerd/config.toml
+# 将https://github.com/containerd/containerd/blob/main/containerd.service文件拷贝到/usr/lib/systemd/system/
+systemctl start containerd
+```
+
+#### 2.2 配置yum源
+
 * 配置k8s的yum源，例如配置阿里云的源
 ```
 echo "[kubernetes]
 name=Kubernetes
-baseurl=http://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-\$basearch
+baseurl=http://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-$basearch
 enabled=1
 gpgcheck=1
 repo_gpgcheck=1
 gpgkey=http://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg http://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
-exclude=kubelet kubeadm kubectl
 " >/etc/yum.repos.d/kubernetes.repo
 ```
-* containerd 容器运行时，也可以使用docker
-* kubectl k8s客户端
-* kubelet 监控容器运行的agent
-* kubeadm 安装工具
+
+* 安装kubectl、kubelet、kubeadm
+``` shell
+yum -y install kubectl kubelet kubeadm
+```
+
 ```
 yum install -y libseccomp cri-tools kubeadm-$k8s_ver kubectl-$k8s_ver kubelet-$k8s_ver --disableexcludes=kubernetes
 ```
@@ -52,7 +66,25 @@ yum install -y libseccomp cri-tools kubeadm-$k8s_ver kubectl-$k8s_ver kubelet-$k
 * coredns
 * 非必要镜像：flannel、dashboard、metrics-scraper
 
+从阿里云上下载镜像，执行`kubeadm config images list`可以知道需要哪些镜像，然后将这些镜像拉取到k8s.io空间中：
+
+``` shell
+K8S_VERSION="v1.22.3"
+ctr -n k8s.io image pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-apiserver-amd64:$K8S_VERSION
+ctr -n k8s.io image pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-controller-manager:$K8S_VERSION
+ctr -n k8s.io image pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-scheduler:$K8S_VERSION
+ctr -n k8s.io image pull registry.cn-hangzhou.aliyuncs.com/google_containers/kube-proxy:$K8S_VERSION
+ctr -n k8s.io images pull registry.cn-hangzhou.aliyuncs.com/google_containers/pause:3.2
+ctr -n k8s.io images pull registry.cn-hangzhou.aliyuncs.com/openthings/k8s-gcr-io-coredns:1.2.6
+ctr -n k8s.io images pull registry.cn-hangzhou.aliyuncs.com/google_containers/etcd:3.5.0-0
+```
+
 ### 4 使用kubeadm执行安装操作 [kubeadm init](https://kubernetes.io/zh/docs/reference/setup-tools/kubeadm/kubeadm-init/)
+
+``` shell
+kubeadm init --kubernetes-version v1.22.3 --image-repository registry.aliyuncs.com/google_containers --pod-network-cidr 10.244.0.0/16
+```
+
 * `kubeadm init phase certs all` 创建证书
 * `kubeadm init phase kubeconfig all` 为admin、controller-manager、kubelet、scheduler生成kubeconfig配置文件
 * `kubeadm init phase kubelet-start` 启动kubelet
@@ -66,4 +98,15 @@ yum install -y libseccomp cri-tools kubeadm-$k8s_ver kubectl-$k8s_ver kubelet-$k
 * `kubeadm init phase addon all` 安装额外的组件，coredns、kube-proxy
 
 ### 5 保存集群配置，用于后续集群访问
-* /etc/kubernetes/admin.conf
+* mkdir ~/.kube && cp /etc/kubernetes/admin.conf ~/.kube/kubeconfig
+
+### 6 部署网络插件(flannel)
+
+* 部署flannel时需要注意在执行kubeadm时需要带上`--pod-network-cidr`参数
+* `kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml`
+
+### 7 部署Node节点
+
+* Node节点只需要部署containerd、kubelet、kubeadm，同时还需要pause镜像
+* kube-proxy不需要部署，由containerd-shim-runc-v2负责启动(如何下载程序的暂时未知)
+* 执行以下命令加入集群，`kubeadm join $APISERVER_ADDRESS --token $TOKEN --discovery-token-ca-cert-hash $CA_CERT_HASH`，当Master节点部署完成后会给出该命令
