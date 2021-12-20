@@ -110,3 +110,27 @@ kubeadm init --kubernetes-version v1.22.3 --image-repository registry.aliyuncs.c
 * Node节点只需要部署containerd、kubelet、kubeadm，同时还需要pause镜像
 * kube-proxy不需要部署，由containerd-shim-runc-v2负责启动(如何下载程序的暂时未知)
 * 执行以下命令加入集群，`kubeadm join $APISERVER_ADDRESS --token $TOKEN --discovery-token-ca-cert-hash $CA_CERT_HASH`，当Master节点部署完成后会给出该命令
+
+### 8 自签名CA证书
+
+``` shell
+mkdir -p /etc/uec
+pushd /etc/uec
+
+# 1 生成根证书
+# 生成根证书的私钥
+openssl genrsa -out cakey.pem
+# 生成自签名证书时需要带上-x509参数
+openssl req -new -x509 -key cakey.pem -out cacert.pem -subj '/CN=Mirror CA/O=xxx/ST=xxx/L=xxx/C=CN' -days 3650
+cat cacert.pem >>/etc/pki/tls/certs/ca-bundle.crt
+
+# 2 生成私钥和证书请求文件
+openssl genrsa -out k8s.io.key 2048
+openssl req -new -key k8s.io.key -out k8s.io.csr -subj '/CN=*.k8s.io/O=xxx/ST=xxx/L=xxx/C=CN'
+
+# 3 颁发证书
+openssl x509 -req -in k8s.io.csr -CA cacert.pem -CAkey cakey.pem -CAcreateserial -out k8s.io.crt -days 3650 -config ./openssl.cfg -extensions k8s.io
+```
+
+### 9 高可用(多master)
+
