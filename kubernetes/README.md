@@ -46,4 +46,6 @@
 
 ### 23 [CRI & OCI](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/cri_oci.md)
 
+### 24 [一种镜像仓库加速的实现](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/image_acceleration.md)
+
 ### 24 [kubernetes代码结构](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/code_structure.md)
