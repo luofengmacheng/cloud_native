@@ -192,6 +192,3 @@ func MockHandler(c *gin.Context) {
 	logger := logrus.LOG().WithField("trace", c.Value("trace").(string))
 }
 ```
-
-### 3 更加高级一点的trace：OpenTracing
-

@@ -8,7 +8,7 @@
 
 ### 3 [登录鉴权(Cookie、Session、Jwt、CAS、SSO)](https://github.com/luofengmacheng/docker_doc/blob/master/gin/authentication.md)
 
-### 4 [参数验证](https://github.com/luofengmacheng/docker_doc/blob/master/gin/param_check.md)
+### 4 [如何开发一个可以快速定位问题的程序](https://github.com/luofengmacheng/docker_doc/blob/master/gin/high_available_program.md)
 
 ### 5 [安全](https://github.com/luofengmacheng/docker_doc/blob/master/gin/security.md)
 
