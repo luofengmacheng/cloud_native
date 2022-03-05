@@ -49,18 +49,32 @@ Controller直接通过Apiserver的接口监控对应资源的变化，当资源�
 
 ![Controller by k8s](https://github.com/kubernetes/sample-controller/blob/master/docs/images/client-go-controller-interaction.jpeg)
 
+client-go components：
+
+* Reflector：对特定类型的资源执行ListAndWatch，当监听到资源变更时，通过API获取最新的资源对象，然后将它放到Delta Fifo queue队列中
+* Informer：从Delta Fifo queue队列中弹出对象，然后调用Indexer放到Store里面，同时调用用户提交的回调函数(ResourceEventHandler)
+* Indexer：用于操作Store中的对象
+
+Custom Controller components：
+
+* Informer Reference和Indexer Reference都是对client-go中对象的引用，用户控制器可以通过cache库直接创建或者使用Factory工厂函数创建
+* ResourceEventHandler：用户控制器接收对象的回调函数，一般来说，里面的逻辑就是，获取对象的key，然后将key写入WorkQueue
+* WorkQueue：用户控制器创建的队列，负责存储用户控制器需要处理的对象的key
+* Process Item：从WorkQueue中读取key，通过key获取对应的对象
+
 上图是通常会给出的关于Controller的实际实现的逻辑，初看还是挺复杂的，大致的模块和功能如下：
 
 ![Controller by lf](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/pics/controller3.png)
 
-其中主要涉及几个模块：
+于是，Controller实现的步骤如下：
 
-* Reflector：对apiserver进行ListAndWatch，将资源和对应的事件存储到DeltaFIFO
-* DeltaFIFO：存放资源和对应的事件，Delta的意思就是带资源变更类型的数据，例如Added类型的Pod
-* Informer：从DeltaFIFO中读取出资源和对应的事件，一方面，存储到缓存(Store)，另一方面，调用事先注册的回调函数，将资源ID存储到WorkQueue
-* Indexer：Store的操作接口，也作为索引
-* Store：in-memory-cache，内存缓存
-* Lister：通过Indexer从缓存中获取数据
+* 获取Informer和Indexer的引用，指定要监控变更的资源类型，注册ResourceEventHandler，并创建WorkQueue，用上述的3个对象初始化我们自己的Controller
+* 编写Process Item Loop，从WorkQueue中读取key，然后执行我们自己的业务逻辑
+
+因此，整个Controller我们需要注入的逻辑只有2个部分，其他都是相对固定的：
+
+* ResourceEventHandler
+* Process Item
 
 ### 3 Controller的使用
 
