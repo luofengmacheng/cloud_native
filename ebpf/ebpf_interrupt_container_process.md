@@ -33,9 +33,9 @@ BPF(伯克利包过滤)本身是一种包过滤机制，用来对网卡的流量
 * 阻断命令的执行：从上面eBPF的应用场景来看，可以使用kprobe跟踪execve系统调用，然后在bpf程序中获取execve的第一个参数(程序名称)，如果第一个参数与用户输入的命令一致，则进行阻断
 * 对容器阻断：如果是使用runc等作为运行时，容器共用宿主机的内核，在容器中执行的系统调用也可以被宿主机上的程序跟踪和截获
 
-### 4 使用eBPF阻断shell的调用
+### 5 使用eBPF阻断shell的调用
 
-#### 4.1 eBPF hello world
+#### 5.1 eBPF hello world
 
 学习一项新的开发技能，一般是从hello world开始的，以下就是ebpf的hello world程序，该程序会hook内核的execve调用，执行该程序后，当在系统中执行任何命令(执行命令其实就是用shell启动一个新的进程，然后调用execve)，都会打印Hello, BPF World!。
 
@@ -66,7 +66,7 @@ int bpf_prog(void *ctx) {
 }
 ```
 
-#### 4.2 eBPF获取系统调用参数
+#### 5.2 eBPF获取系统调用参数
 
 从上面可以看到，eBPF程序主要就是编写bpf模块的程序，但是里面既涉及到一些非常规函数，而且还涉及到用户态和内核态，学习成本太高。好在现在有BCC这个工具可以方便开发。
 
@@ -103,9 +103,9 @@ b.trace_print()
 
 至此，就可以对命令进行阻断了。
 
-### 5 阻断containerd容器中的命令
+### 6 阻断containerd容器中的命令
 
-#### 5.1 安装containerd
+#### 6.1 安装containerd
 
 * 下载containerd：wget https://github.com/containerd/containerd/releases/download/v1.6.1/cri-containerd-cni-1.6.1-linux-amd64.tar.gz
 * 安装：tar -C / cri-containerd-cni-1.6.1-linux-amd64.tar.gz && containerd config default > /etc/containerd/config.toml
@@ -115,7 +115,7 @@ b.trace_print()
 * 创建容器：ctr run -d -t uhub.service.ucloud.cn/edn_docker/nginx:1.20 nginx
 * 进入容器：ctr t exec -exec-id $RANDOM -t nginx sh
 
-#### 5.2 阻断容器
+#### 6.2 阻断容器
 
 进入容器，然后执行命令可以发现，宿主机上面的程序同样可以捕获execve系统调用，但是这样做存在的问题是阻断了所有的命令调用。因此，现在就剩下一个问题：在执行阻断逻辑时需要识别出当前所处的容器。
 
@@ -142,7 +142,7 @@ b.trace_print()
 
 ![eBPF阻断容器中的命令](https://github.com/luofengmacheng/container_doc/blob/master/ebpf/pics/ebpf_interrupt_containerd_container.jpeg)
 
-### 5 参考文档
+### 7 参考文档
 
 * [一文看懂eBPF｜eBPF的简单使用](https://mp.weixin.qq.com/s/V-5k1mX5JRA0lWLXJ2AxpA)
 * [云原生安全攻防｜使用eBPF逃逸容器技术分析与实践](https://security.tencent.com/index.php/blog/msg/206)
