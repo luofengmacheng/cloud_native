@@ -46,7 +46,7 @@ BPF(伯克利包过滤)本身是一种包过滤机制，用来对网卡的流量
 * make bpfload
 * ./monitor-exec
 
-![eBPF Hello World](https://github.com/luofengmacheng/container_doc/blob/master/ebpf/pics/ebpf_hello_world.jpb)
+![eBPF Hello World](https://github.com/luofengmacheng/container_doc/blob/master/ebpf/pics/ebpf_hello_world.jpg)
 
 该程序包含两个文件：
 
