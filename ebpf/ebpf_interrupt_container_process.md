@@ -54,7 +54,7 @@ bpf_program.c就是内核需要加载的程序，用clang编译成字节码bpf_p
 
 bpf_program.c中重点就是两个地方：字节码的挂载点和hook函数。
 
-```
+``` c
 // 声明该函数的挂载点是execve系统调用
 SEC("tracepoint/syscalls/sys_enter_execve")
 int bpf_prog(void *ctx) {
