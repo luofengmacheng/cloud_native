@@ -53,3 +53,7 @@
 ### 26 [一种镜像仓库加速的实现](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/image_acceleration.md)
 
 ### 27 [kubernetes代码结构](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/code_structure.md)
+
+### 28 [leaderelection选主机制](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/leader_election.md)
+
+### 29 [helm部署elasticsearch](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/deploy_es_by_helm.md)
