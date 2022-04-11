@@ -57,3 +57,5 @@
 ### 28 [leaderelection选主机制](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/leader_election.md)
 
 ### 29 [helm部署elasticsearch](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/deploy_es_by_helm.md)
+
+### 30 [问题定位技巧](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/trouble_shooting.md)
