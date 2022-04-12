@@ -76,7 +76,7 @@ kubectl create rolebinding my-rb --clusterrole=admin --serviceaccount=develop:my
 
 通过上面的方式，my-sa这个SA就只能访问develop这个命名空间中的所有资源，那么剩下的问题就是，如果客户端要用这个SA访问该怎么办呢？那就只有为用户生成kubeconfig文件。
 
-下面是kubeconfig的文件结构：
+如果是通过TOKEN的方式认证：
 
 ``` yaml
 apiVersion: v1
@@ -112,6 +112,46 @@ users:
 集群名称、集群域名、命名空间可以直接得到，剩下的用户名称、token和证书该如何得到呢？
 
 SA包含三个部分：命名空间、token、证书。因此，可以直接用SA的名称、SA的token和SA的证书代替。有了上面的信息，就可以生成最终的kubeconfig文件。
+
+如果是通过https证书认证的方式：
+
+``` yaml
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: $CERTIFICATE_AUTHORITY_DATA
+    server: $CLUSTER_URL
+  name: default
+contexts:
+- context:
+    cluster: default
+    user: default
+  name: default
+current-context: default
+kind: Config
+preferences: {}
+users:
+- name: $USERNAME
+  user:
+    client-certificate-data: $CLIENT_CERTIFICATE_DATA
+    client-key-data: $CLIENT_KEY_DATA
+```
+
+* CERTIFICATE_AUTHORITY_DATA：CA证书，用于验证服务端发送来的证书
+* CLIENT_CERTIFICATE_DATA：客户端证书，发送给服务端，从中提取出公钥
+* CLIENT_KEY_DATA：客户端私钥
+
+这种方式的认证流程就是：
+
+* 客户端连接server中指定的集群地址
+* 服务端返回证书，客户端用指定的CA证书对服务端返回的证书进行验证，并从中提取出服务端的公钥
+* 客户端将自己的证书发送给服务端
+* 服务端同样对客户端发送的证书进行验证，并从中提取出客户端的公钥
+* 客户端生成随机数，使用服务端的公钥进行加密
+* 服务端收到数据后，使用私钥进行解密，然后提取出随机数
+* 客户端与服务端使用随机数作为对称密钥进行通信
+
+因此，使用https相比于token的好处就是：token只验证了服务端，而https会对服务端和客户端都进行验证。
 
 #### 5.2 User
 
@@ -219,18 +259,35 @@ kubectl config set-context --cluster=$CLUSTER_NAME --user=$USERNAME --namespace=
 
 kubernetes中的所有组件通信时都采用HTTPS双向认证，而部署时不可能为他们申请证书，因此，在部署kuberentes时通常都是先生成自签名证书，然后用该证书作为根证书，后续的证书都通过它签发。
 
-```
+``` shell
 mkdir -p /etc/crt
 pushd /etc/crt
+
+# 使用RSA算法生成私钥
 openssl genrsa -out cakey.pem
+
+# 根据私钥得到公钥，然后生成证书
+# -new：生成新的证书请求文件
+# -x509：结合-new表示生成证书文件
+# -key：私钥
+# -subj：机构信息(网站信息)
+# -days：有效期
 openssl req -new -x509 -key cakey.pem -out cacert.pem -subj '/CN=Mirror CA/O=UCloud/ST=GuangDong/L=Shenzhen/C=CN' -days 3650
 cat cacert.pem >>/etc/pki/tls/certs/ca-bundle.crt
+
+# 使用RSA算法生成私钥
 openssl genrsa -out k8s.io.key 2048
+
+# 生成证书请求文件
 openssl req -new -key k8s.io.key -out k8s.io.csr -subj '/CN=*.k8s.io/O=UCloud/ST=GuangDong/L=Shenzhen/C=CN'
 
+# 依据上面生成的CA证书和CA私钥，根据证书请求文件生成证书
+# -in 证书请求文件
+# -CA ca的证书
+# -CAkey ca的私钥
+# -CAcreateserial
+# -extensions 
 openssl x509 -req -in k8s.io.csr -CA cacert.pem -CAkey cakey.pem -CAcreateserial -out k8s.io.crt -days 3650 -config ./openssl.cfg -extensions k8s.io
 popd
-
-grep -c "dl.k8s.io" /etc/hosts >/dev/null || echo "127.0.0.1 dl.k8s.io" >>/etc/hosts
 ```
 
