@@ -59,7 +59,9 @@ k8s提供了4个顶级资源进行权限的授予，那么，在实际中该如�
 
 ### 5 实践
 
-#### 5.1 ServiceAccount
+#### 5.1 User & ServiceAccount
+
+apiserver是K8S集群中所有组件协同工作的桥梁，因此，任何组件在实现时都需要访问apiserver。K8S将访问集群的用户分成两类：User和ServiceAccount。User是访问集群实际的用户，例如，使用kubectl访问集群的用户；而ServiceAccount则是访问集群的应用，也称为服务账号。
 
 假设现在的场景是，我们需要创建一个用户，这个用户只能在develop这个命名空间中操作资源，SA虽然通常是Pod访问apiserver的方式，但是，也可以在外部通过SA访问集群。
 
@@ -113,7 +115,7 @@ users:
 
 SA包含三个部分：命名空间、token、证书。因此，可以直接用SA的名称、SA的token和SA的证书代替。有了上面的信息，就可以生成最终的kubeconfig文件。
 
-如果是通过https证书认证的方式：
+同样的，如果使用User进行认证就需要使用证书，例如下面的kubeconfig文件：
 
 ``` yaml
 apiVersion: v1
@@ -141,6 +143,8 @@ users:
 * CLIENT_CERTIFICATE_DATA：客户端证书，发送给服务端，从中提取出公钥
 * CLIENT_KEY_DATA：客户端私钥
 
+因此，要想让我们的客户端能够通过k8s的认证，就需要使用k8s的CA证书对私钥生成证书即可，然后就可以生成kubeconfig，那么k8s怎么知道当前用户是谁呢？因此，在生成证书时，提供的信息中就需要将CN(CommonName)设置为用户名，然后在k8s中再对用户进行授权，就可以进行访问了。
+
 这种方式的认证流程就是：
 
 * 客户端连接server中指定的集群地址
@@ -152,18 +156,6 @@ users:
 * 客户端与服务端使用随机数作为对称密钥进行通信
 
 因此，使用https相比于token的好处就是：token只验证了服务端，而https会对服务端和客户端都进行验证。
-
-#### 5.2 User
-
-其实，通过上面的SA的例子可以看出，为了生成最终的kubeconfig，主要就是要得到一套证书和私钥。另外，为了方便kubeconfig的生成，kubernetes也提供了一些命令：
-
-```
-kubectl config set-cluster $CLUSTER_NAME --certificate-authority=公钥 --server=$CLUSTER_URL --kubeconfig=user.kubeconfig
-
-kubectl config set-credentials --client-certificate=证书 --client-key=私钥 --username=用户名 --kubeconfig=user.kubeconfig
-
-kubectl config set-context --cluster=$CLUSTER_NAME --user=$USERNAME --namespace=$NAMESPACE
-```
 
 ### 6 公钥、私钥、签名、证书
 

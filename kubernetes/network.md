@@ -262,3 +262,16 @@ websocket提供了ping-pong的方式，其实就是服务端发送ping控制消�
 长连接通常由`保活机制`实现，由`服务端`在`连接空闲一段时间`后发起探测，当多次探测都失败时，认为客户端出现问题，此时会断开连接，从而保证连接的可用性。
 
 TCP是传输层的协议，它的长连接更多是为了在协议层面进行连接复用。而HTTP作为应用层协议，它的长连接更多的是让服务端在处理请求后不将连接断开，更偏向于业务上层。
+
+### 6 网络虚拟化
+
+* bridge：
+* vxlan：
+* macvlan：
+* ipvlan：
+* macvtap：
+
+### 7 参考文档
+
+* [Deep dive into docker overlay networks](https://blog.revolve.team/2017/04/25/deep-dive-into-docker-overlay-networks-part-1/)
+* [深入浅出kubernetes中的CNI](https://github.com/helios741/myblog/blob/new/learn_go/src/2020/0303_k8s_cni/README.md)
