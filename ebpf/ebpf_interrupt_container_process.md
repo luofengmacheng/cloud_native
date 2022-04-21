@@ -46,7 +46,7 @@ BPF(伯克利包过滤)本身是一种包过滤机制，用来对网卡的流量
 * make bpfload
 * ./monitor-exec
 
-![eBPF Hello World](https://github.com/luofengmacheng/container_doc/blob/master/ebpf/pics/ebpf_hello_world.jpg)
+![eBPF Hello World](https://github.com/luofengmacheng/cloud_native/blob/master/ebpf/pics/ebpf_hello_world.jpg)
 
 该程序包含两个文件：
 
@@ -140,7 +140,7 @@ b.trace_print()
 
 最终的效果就是：
 
-![eBPF阻断容器中的命令](https://github.com/luofengmacheng/container_doc/blob/master/ebpf/pics/ebpf_interrupt_containerd_container.jpeg)
+![eBPF阻断容器中的命令](https://github.com/luofengmacheng/cloud_native/blob/master/ebpf/pics/ebpf_interrupt_containerd_container.jpeg)
 
 ### 7 参考文档
 

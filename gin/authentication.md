@@ -10,7 +10,7 @@
 
 需要识别当前HTTP请求是谁发起，就需要在后端存储用户信息，例如，用户ID、用户名、用户部门等，这些信息就存储在Session中，但是，在一段时间，可能有大量用户访问网站，也就是说，后端应该是存储一个字典，那么，哪一个用户才是当前这个请求的呢？这时就需要使用Cookie，Cookie是存储在客户端(浏览器)中的信息，将Session字典的键存储到客户端，当用户访问网站时，就会携带该Cookie，后端收到请求后，根据Cookie中的键就可以找到Session字典对应的值，也就能够识别当前用户的信息。
 
-![](https://github.com/luofengmacheng/container_doc/blob/master/gin/pics/session_cookie.png)
+![](https://github.com/luofengmacheng/cloud_native/blob/master/gin/pics/session_cookie.png)
 
 如上图所示，Cookie的存储形式也相当于KV，因此，最重要的属性就是名字和值。当前浏览器存储了SESSIONID=23456的Cookie，当用户通过该浏览器访问后端服务时，就会携带该Cookie(至于为什么会携带，这是Cookie本身的机制，当然还要看Cookie所属域名)，后端服务收到请求后，读取其中的Cookie，然后查询Session，就可以知道当前访问的用户是Hanmeimei。
 
