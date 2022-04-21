@@ -34,7 +34,7 @@ websocket就是为了解决服务端主动推送数据而产生的。
 
 要了解一个协议，最简单的方式就是抓包看协议的工作方式：
 
-![wireshark](https://github.com/luofengmacheng/cloud_native/blob/master/docs/network1.png)
+![wireshark](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/pics/network1.png)
 
 图中总共抓了16个包，其中：
 
