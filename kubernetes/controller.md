@@ -19,7 +19,7 @@ kubernetes采用了声明式API，与声明式API相对应的是命令式API：
 
 下面以Deployment的创建操作为例说明整个流程：
 
-![创建Deployment的整体流程](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/pics/controller1.png)
+![创建Deployment的整体流程](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/pics/controller1.png)
 
 通过上图重新复习下各组件的工作方式：
 
@@ -35,7 +35,7 @@ kubernetes采用了声明式API，与声明式API相对应的是命令式API：
 
 知道了Controller的工作方式，如果是我们自己实现Controller，可以会这样来实现：
 
-![自己实现Controller](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/pics/controller2.png)
+![自己实现Controller](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/pics/controller2.png)
 
 Controller直接通过Apiserver的接口监控对应资源的变化，当资源发生变化时，直接执行对应的业务逻辑，也就是调协循环。
 
@@ -64,7 +64,7 @@ Custom Controller components：
 
 上图是通常会给出的关于Controller的实际实现的逻辑，初看还是挺复杂的，大致的模块和功能如下：
 
-![Controller by lf](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/pics/controller3.png)
+![Controller by lf](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/pics/controller3.png)
 
 于是，Controller实现的步骤如下：
 

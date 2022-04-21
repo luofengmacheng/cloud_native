@@ -233,7 +233,7 @@ ip link set vxlan0 up
 
 然后我们在10.10.1.2上面执行`nc -l -p 2345`，在10.10.1.3上面执行`telnet 10.10.1.2 2345`，并在10.10.1.3上面发送数据，在10.10.1.2上也可以看到数据。在此过程中，使用tcpdump抓包。
 
-![](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/pics/flannel1.png)
+![](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/pics/flannel1.png)
 
 图中可以很容易看出vxlan的mac in udp的特点：
 

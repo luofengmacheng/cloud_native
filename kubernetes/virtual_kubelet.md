@@ -384,7 +384,7 @@ func (pt *PodsTracker) cleanupDanglingPods(ctx context.Context) {
 
 那么，virtual kubelet的整体结构如下：
 
-![virtual kubelet](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/pics/virtual_kubelet.png)
+![virtual kubelet](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/pics/virtual_kubelet.png)
 
 总结下上面的三条路径：
 
@@ -403,7 +403,7 @@ azure-aci中的logs不支持`-f`选项，因此，只需要调用ACI容器组的
 
 具体的数据流向如下：
 
-![kubectl exec](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/pics/virtual_kubelet2.png)
+![kubectl exec](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/pics/virtual_kubelet2.png)
 
 当用户在终端输入命令时，首先kubectl会先拿到命令，然后再交给kube-apiserver，kube-apiserver再将命令发送给kubelet，在这里就是virtual kubelet。那么，VK要做的就是读取命令，然后将命令发送给后端的容器组去执行，容器组执行完成后，再将结果推送给VK，VK则将结果推送给kube-apiserver，kube-apiserver将结果推送给kubectl，kubectl打印出来。这时候，用户看到的就类似于输入命令，然后输出结果。
 

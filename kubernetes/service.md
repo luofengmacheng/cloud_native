@@ -215,7 +215,7 @@ CoreDNS通过client-go的informer机制监视k8s中的Service和ClusterIP的变�
 
 #### 4.3.1 用户空间
 
-![userspace](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/pics/service_userspace.png)
+![userspace](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/pics/service_userspace.png)
 
 kube-proxy通过apiserver监听服务的状态变化，发现用户创建了redis服务，后端有2个pod，于是kube-proxy在本机起一个随机端口，然后在iptables中创建2条规则：
 
@@ -228,7 +228,7 @@ kube-proxy的作用是：负责监听服务和Pod的状态，维护iptables规�
 
 #### 4.3.2 iptables
 
-![iptables](https://github.com/luofengmacheng/docker_doc/blob/master/kubernetes/pics/service_iptables.png)
+![iptables](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/pics/service_iptables.png)
 
 kube-proxy通过apiserver监听服务的状态变化，发现用户创建了redis服务，后端有2个pod，于是kube-proxy在iptables中创建1条规则：
 
