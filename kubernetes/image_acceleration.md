@@ -5,29 +5,64 @@
 #### 1.1 Docker
 
 * /var/lib/docker/
-    * containers/ 当前机器上所有的容器(docker ps -a)
+    * `containers/<container_id>/`
+        * <container_id>-json.log
+        * checkpoints/
+        * config.v2.json 容器的配置和状态信息，包含了docker inspect的大部分内容
+        * hostconfig.json 容器在主机上的配置，例如，端口映射、Capability、DNS等
+        * hostname 挂载到容器中的/etc/hostname
+        * hosts 挂载到容器中的/etc/hosts
+        * mounts/
+        * resolv.conf 挂载到容器中的/etc/resolv.conf
+        * resolv.conf.hash
     * devicemapper/
         * devicemapper/
         * metadata/
-        * mnt/<容器ID>/rootfs/ 运行中的容器的根文件系统
-    * image/
+        * mnt/<container_id>/rootfs/ 运行中的容器的根文件系统
+    * `image/`
         * <存储驱动>/
             * repositories.json 当前机器上的镜像的列表
             * imagedb/ 镜像数据库
                 * content/sha256/ 每个镜像的digest
             * layerdb/ 每个层的信息
     * network/
+    * overlay2/<container_id>/
+        * diff/
+        * link
+        * lower
+        * merged/ 容器的rootfs
+        * work/
     * plugins/
     * swarm/
     * tmp/
     * trust/
     * volumes/
+* /run/docker/
+    * containerd/<container_id>/
+    * libnetwork/
+    * metrics.sock
+    * netns/
+    * plugins/
+    * runtime-runc/<namespace>/<container_id>/state.json 容器的OCI配置、cgroup路径、namespace路径
+    * swarm/
+
+容器在实现过程中会使用联合文件系统对容器的目录进行挂载，联合文件系统会将容器的文件系统分成2层：镜像层和容器层，其中，镜像层是只读层，就是由多个镜像层叠加而成，容器层是可写层。使用`docker inspect`查看容器的信息时，可以看到其中有4个目录：
+
+* LowerDir：镜像层，由多个层组成，每个层都是该层操作的一些目录和文件，每个层从上到下用冒号分隔，对比镜像的inspect结果和容器的inspect结果，容器的inspect结果多了一个init层，它包含一些初始化文件：/etc/hostname、/etc/hosts、/etc/resolv.conf、/dev/console等，该层是在创建容器时，根据当前的容器配置得到这些配置文件，自动添加的层，在`docker commit`时也不会提交该层
+* MergedDir：容器的rootfs，对外提供的整个容器的目录
+* UpperDir：容器层，是运行容器时生成的目录和文件
+* WorkDir：工作目录，用于实现CoW的临时目录
 
 #### 1.2 Containerd
 
 * /var/lib/containerd/
     * io.containerd.content.v1.content/blobs/sha256/ 镜像实际的数据，包含config、manifest、layer
-    * io.containerd.grpc.v1.cri
+    * io.containerd.grpc.v1.cri/
+        * containers/<container_id>/status
+        * sandboxes/<sandbox_id>/
+            * hostname
+            * hosts
+            * resolv.conf
     * io.containerd.metadata.v1.bolt/meta.db 使用boltdb存储镜像的元数据
     * io.containerd.runtime.v1.linux
     * io.containerd.runtime.v2.task/<namespace>/
@@ -40,13 +75,19 @@
     * containerd.sock
     * containerd.sock.ttrpc
     * io.containerd.grpc.v1.cri/
-        * containers/ 所有的非pause生成的容器
-        * sandboxes/ pause生成的容器
+        * containers/<container_id>/ 所有的非pause生成的容器
+        * sandboxes/<sandbox_id>/ pause生成的容器
     * io.containerd.runtime.v1.linux/
     * io.containerd.runtime.v2.task/<namespace>/<container_id>/
-        * config.json
+        * address
+        * `config.json OCI spec文件，使用docker时，当前的rootfs为空，会在root.path指定rootfs目录`
+        * `init.pid 容器中的1号进程`
+        * log.json 
+        * options.json
         * rootfs/
-        * work
+        * runtime 运行时名称，例如，runc、runsc
+        * shim-binary-path shim二进制的路径
+        * work -> /var/lib/containerd/io.containerd.runtime.v2.task/<namespace>/<container_id>/
     * runc/
 
 ### 2 服务端镜像的存储方式
@@ -109,4 +150,4 @@ registry-proxy负责截获containerd的请求，因此，需要修改containerd�
 ### 参考文档
 
 * [Docker Registry Api Specification](https://docs.docker.com/registry/spec/api/)
-[Where are containerd’s graph drivers?](https://blog.mobyproject.org/where-are-containerds-graph-drivers-145fc9b7255)
+* [Where are containerd’s graph drivers?](https://blog.mobyproject.org/where-are-containerds-graph-drivers-145fc9b7255)
