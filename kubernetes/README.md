@@ -60,4 +60,6 @@
 
 ### 30 [K3S实现](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/k3s_implete.md)
 
-### 31 [问题定位技巧](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/trouble_shooting.md)
+### 31 [离线安装Docker和Minikube](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/install_docker_minikube_offline.md)
+
+### 32 [问题定位技巧](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/trouble_shooting.md)
