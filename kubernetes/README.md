@@ -62,4 +62,6 @@
 
 ### 31 [离线安装Docker和Minikube](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/install_docker_minikube_offline.md)
 
-### 32 [问题定位技巧](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/trouble_shooting.md)
+### 32 [使用luakube访问kubernetes api](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/call_k8s_api_by_luakube.md)
+
+### 33 [问题定位技巧](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/trouble_shooting.md)
