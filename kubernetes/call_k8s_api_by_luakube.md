@@ -169,9 +169,107 @@ print(t:Sub())
 
 如果用冒号定义和调用方法，lua解释器会自动添加self，如果用点号，则需要开发人员添加self。
 
-#### 5.2 metadata
+#### 5.2 metatable
+
+[metatable](http://www.lua.org/manual/5.1/manual.html#2.8)翻译为元表，可以理解为table的额外属性，当访问table的一些操作时，如果table不存在，可以由元表进行完成。
+
+lua中的metatable的概念跟python中的保留方法很像：
+
+python中对于双下划线开头和结尾的方法有特殊含义，例如，当创建一个对象时，就是调用类的__init__()方法，当用iter某个序列时，就是调用类的__iter__()方法，也就是说，当对对象调用某个方法时，会调用某个约定好的方法，如果开发人员没有定义则调用默认的方法，当然，默认方法必须要支持此类行为，例如，如果用iter遍历一个不能遍历的对象，如果没有定义__iter__()则会调用失败。
+
+在lua中，除了常用的基本数据类型(nil、布尔、数字、字符串)之外，table是lua提供的唯一的的复合数据类型(其他数据类型都是针对特定场景)，table可以用于实现数组、集合、字典、类等类型，而metatable就是在table上面附加的一种属性，也就是说，metatable只针对table类型。
+
+跟python类似，在lua中，双下划线开头的方法有特殊含义，例如，当用`+`操作符对两个table相加时，就是调用第一个table的metatable中的__add()方法，这种相当于实现了对操作符的自定义，跟python中的__add__和C++中的operator +类似；当调用table一个不存在的方法时，就会调用table的metatable中的对应的方法，这种相当于实现了对类方法的动态增加。
+
+要想使用metatable，有两个重要的方法：
+
+* setmetatable(table, metable)：设置table的metatable，虽然这里是table，但是根据lua的文档可以知道，任何值都有metatable，但是只有table的metable可以在lua中通过setmtatable修改，其他类型只能通过C语言修改。如果metatable设置为nil，则删除table的metatable；如果table的metatable中有__metatable元素，则抛出异常，函数返回新的table
+* getmetatable(object)：返回对象的metatable。如果object没有metatable，则返回nil；如果object的metatable有__metatable元素，则返回对应的值；如果object的metatable没有__metatable元素，则返回对象的metatable。
+
+下面演示操作符的实现和方法的增加：
+
+##### 5.2.1 使用metatable对table新增操作符
+
+``` lua
+mytable = setmetatable({ 1, 2, 3 }, {
+    __add = function(mytable, newtable)
+        return table.move(newtable, 1, #newtable, #mytable+1, mytable)
+    end
+})
+
+secondtable = {4,5,6}
+
+mytable = mytable + secondtable
+
+for k,v in ipairs(mytable) do
+    print(k,v)
+end
+```
+
+使用setmetatable对table增加`__add`方法，`__add`实现时使用了table的move方法将第二个table中的元素放到第一个table中。
+
+##### 5.2.2 使用metatable对table新增方法
+
+``` lua
+local mytable = {1, 2, 3}
+
+setmetatable(mytable, {
+    __index = function(mytable, key)
+        return function(self, newtable)
+            table.move(newtable, 1, #newtable, #self+1, self)
+            return self
+        end
+    end
+})
+
+local secondtable = {4,5,6}
+
+mytable:plus(secondtable)
+
+for i=1,#mytable do
+    print(mytable[i])
+end
+```
+
+这里是给table增加了plus方法，通过增加带`__index`的metatable实现，`__index`对应的是个函数，而且它返回的也是个函数，返回的这个函数完成的就是两个table拼接的操作。因此，当调用mytable:plus时，由于mytable没有plus对应的值，就会查找metatable中的`__index`元素，由于`__index`存在，则会调用，并传入mytable和调用的键，因此，这里key==plus，而`__index`返回的时个函数，也就是说，mytable:plus返回的是个函数，然后用里面的这层函数调用，newtable传入的就是secondtable。
+
+##### 5.2.3 再探luakube
+
+luakube通过k8s的rest api访问，因此，只要知道调用接口的url和参数即可。
+
+k8s的rest api的url格式如下：
+
+`http://[api/apis]/api-group/api-version/namespaces/namespace/resource-kind/resource-name`
+
+例如，获取命名空间default的所有pod：`http://127.0.0.1:8001/api/v1/namespaces/default/pods`
+
+而k8s的rest api，其实就是完成资源操作的CRUD，只有在需要提供yaml文件时，才会把yaml文件放到body里面，其他的参数都放到url里面，因此，重点就是要对url进行拼接和调用。
+
+luakube为了使得调用封装的调用更加灵活，将url中不同的部分放到不同的地方。
+
+开始的api和apis在api.lua中，现在只有api/v1是api，其他都是apis。
+
+api-group/api-version在utils.lua的utils.generate_base(api)中，其中参数api就是api-group/api-version，在下面client.call中会将self.api_拼接到路径前面进行调用。
+
+剩下的部分则在utils.lua的utils.generate_object_client(api,concat,namespaced)中，其中参数api就是资源类型resource-kind，concat是yaml中的apiVersion和kind，对于需要yaml文件作为参数的需要，namespaced则是说明该资源是否可以指定namespace，当然，最终是否要加上namespace，还要基于是否提供namespace参数。而最后的resource-name则是通过utils.generate_object_client()中的调用方法提供。
+
+为了将上述的调用串起来，代码中大量使用下面的操作：
+
+``` lua
+self.__index = self
+setmetatable(o, self)
+```
+
+上面的代码将self作为o的metatable中的`__index`元素，于是，当访问o中的元素没有时，就会访问self中的元素，这样能够实现类似继承的机制，同时也可以给o添加方法，让o去调用self的方法，相当于子类调用父类的方法。
+
+因此，将上面的url串起来的方式就是，在utils.generate_object_client()里面创建client，然后将core_v1.Client当作parent参数作为client的metatable，而core_v1.Client是通过utils.generate_base()返回的函数创建的client，这里又通过类似的机制调用api.lua中的方法。
+
+总结下，通过metatable实现类似继承的机制，然后通过继承关系拼接url，最终调用api.lua中的https接口实现k8s的api的访问。
 
 ### 6 参考文档
 
 * [Lua中的self](https://zhuanlan.zhihu.com/p/115159195)
 * [Lua 元表(Metatable)](https://www.cnblogs.com/wwjj4811/p/14573617.html)
+* [Lua 5.4 Reference Manual](http://www.lua.org/manual/5.4/)
+* [k8s restful API 结构分析](https://www.cnblogs.com/elnino/p/9578017.html)
+* [对lua继承中self.__index = self的释疑](https://www.cnblogs.com/tudas/p/how-to-understand-lua-oo-self__index.html)
