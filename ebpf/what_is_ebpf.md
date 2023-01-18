@@ -106,9 +106,55 @@ main.go：
 
 ```
 
-#### 文档
+### 5 编写ebpf程序的方式
+
+上面提过，epbf一般要分为两个程序：一个是加载到内核的程序，这部分一般是用C语言编写，另一个是运行在用户态的程序，当前这部分可以绑定到不同的语言，常用的有python和golang。
+
+#### 5.1 系统调用
+
+[利用eBPF技术实现容器进程的阻断](https://github.com/luofengmacheng/cloud_native/blob/master/ebpf/ebpf_interrupt_container_process.md)
+
+#### 5.2 libbpf(BTF & CO-RE)
+
+* 安装依赖：yum install clang binutils-devel elfutils-libelf-devel
+* 安装libbpf：git clone https://github.com/libbpf/libbpf && cd libbpf/src && make && make install
+* 生成vmlinux.h，解除对kernel header的依赖：* bpftool btf dump file /sys/kernel/btf/vmlinux format c > vmlinux.h
+* 编译内核代码：clang -g -O2 -target bpf -D__TARGET_ARCH_x86 -c kprobe.bpf.c -o kprobe.bpf.o
+* 生成用户态头文件：bpftool gen skeleton kprobe.bpf.o > kprobe.skel.h
+* 将用户态程序编译为目标文件：clang -g -O2 -Wall -c kprobe.c -o kprobe.o
+* 将目标文件编译为可执行程序：clang -Wall -O2 -g kprobe.o -static -lbpf -lelf -lz -o kprobe -v(此处如果编译为静态版本，需要有[glibc](https://www.gnu.org/software/libc/)、[libelf](https://sourceware.org/elfutils/)、[zlib](https://www.zlib.net/)的静态链接包，如果没有就需要下载对应的源代码进行编译)
+
+#### 5.3 BCC(python)
+
+* yum install python3-bcc(会安装libbpf、python3-bcc、bcc等包)
+
+``` python
+from bcc import BPF
+
+BPF(text='int kprobe__sys_clone(void *ctx) { bpf_trace_printk("Hello, World!\\n"); return 0; }').trace_print()
+```
+
+#### 5.4 cilium的ebpf(golang)
+
+[什么是eBPF(Helloworld)](https://github.com/luofengmacheng/cloud_native/blob/master/ebpf/what_is_ebpf.md)
+
+#### 5.6 上述方式的优劣
+
+* 系统调用：使用系统调用的方式需要对
+* libbpf(BTF & CO-RE)：
+* BCC(python)：用户态程序编写方便，但是需要安装python和对应的库
+* cilium的ebpf：
+
+### 6 版本特性
+
+* eBPF支持：3.15引入
+* BTF支持：4.18
+
+### 7 文档
 
 * [Introduction to eBPF](https://houmin.cc/posts/2c811c2c/)
 * [eBPF Map操作](https://houmin.cc/posts/98a3c8ff/)
 * [eBPF, part 1: Past, Present, and Future](https://www.ferrisellis.com/content/ebpf_past_present_future/)
 * [eBPF, part 2: Syscall and Map Types](https://www.ferrisellis.com/content/ebpf_syscall_and_maps/)
+* [bcc Reference Guide](https://github.com/iovisor/bcc/blob/master/docs/reference_guide.md)
+* [centos 8 安装glibc-static、cannot find -lc 解决办法](https://blog.csdn.net/ab411919134/article/details/115079449)
