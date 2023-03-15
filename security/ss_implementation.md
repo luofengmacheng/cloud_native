@@ -83,6 +83,70 @@ Exit:
 * sockdiag_send向内核发送请求
 * rtnl_dump_filter对内核返回的数据进行过滤和解析
 
+进入到lib/libnetlink.c，查看rtnl_open_byproto的代码，其实就是创建socket，然后设置一些选项，然后调用bind函数：
+
+``` c++
+int rtnl_open_byproto(struct rtnl_handle *rth, unsigned int subscriptions,
+		      int protocol)
+{
+	socklen_t addr_len;
+	int sndbuf = 32768;
+	int one = 1;
+
+	memset(rth, 0, sizeof(*rth));
+
+	rth->proto = protocol;
+	rth->fd = socket(AF_NETLINK, SOCK_RAW | SOCK_CLOEXEC, protocol);
+	if (rth->fd < 0) {
+		perror("Cannot open netlink socket");
+		return -1;
+	}
+
+	if (setsockopt(rth->fd, SOL_SOCKET, SO_SNDBUF,
+		       &sndbuf, sizeof(sndbuf)) < 0) {
+		perror("SO_SNDBUF");
+		return -1;
+	}
+
+	if (setsockopt(rth->fd, SOL_SOCKET, SO_RCVBUF,
+		       &rcvbuf, sizeof(rcvbuf)) < 0) {
+		perror("SO_RCVBUF");
+		return -1;
+	}
+
+	/* Older kernels may no support extended ACK reporting */
+	setsockopt(rth->fd, SOL_NETLINK, NETLINK_EXT_ACK,
+		   &one, sizeof(one));
+
+	memset(&rth->local, 0, sizeof(rth->local));
+	rth->local.nl_family = AF_NETLINK;
+	rth->local.nl_groups = subscriptions;
+
+	if (bind(rth->fd, (struct sockaddr *)&rth->local,
+		 sizeof(rth->local)) < 0) {
+		perror("Cannot bind netlink socket");
+		return -1;
+	}
+	addr_len = sizeof(rth->local);
+	if (getsockname(rth->fd, (struct sockaddr *)&rth->local,
+			&addr_len) < 0) {
+		perror("Cannot getsockname");
+		return -1;
+	}
+	if (addr_len != sizeof(rth->local)) {
+		fprintf(stderr, "Wrong address length %d\n", addr_len);
+		return -1;
+	}
+	if (rth->local.nl_family != AF_NETLINK) {
+		fprintf(stderr, "Wrong address family %d\n",
+			rth->local.nl_family);
+		return -1;
+	}
+	rth->seq = time(NULL);
+	return 0;
+}
+```
+
 这里面涉及的几个数据结构：
 
 ``` c++
@@ -137,56 +201,102 @@ struct msghdr // 发送的数据
   };
 ```
 
-发送数据时，将整个msghdr发送给内核，内核收到数据后，进行解包然后执行对应的逻辑，然后返回数据，此时，用户态程序就需要以类似的逻辑来解析收到的数据：使用recvmsg接收数据，将接收到的数据转换成nlmsghdr，再通过NLMSG_开头的一些宏(NLMSG_OK：正常收到数据；NLMSG_DATA：得到本次收到的报文数据；NLMSG_NEXT：获取下一个报文；NLMSG_DONE：本次的报文处理完毕)对数据进行处理，因此，大体的逻辑就是：
+发送数据时，将整个msghdr发送给内核，内核收到数据后，进行解包然后执行对应的逻辑，然后返回数据，此时，用户态程序就需要以类似的逻辑来解析收到的数据：使用recvmsg接收数据，将接收到的数据转换成nlmsghdr，再通过NLMSG_开头的一些宏(NLMSG_OK：正常收到数据；NLMSG_DATA：得到本次收到的报文数据；NLMSG_NEXT：获取下一个报文；NLMSG_DONE：本次的报文处理完毕)对数据进行处理，rtnl_dump_filter就是调用rtnl_dump_filter_l：
 
 ``` c++
-        while (1) {
-           ssize_t status = 0;
-           struct nlmsghdr *h;
-           msg = (struct msghdr){reinterpret_cast<void *>(&nladdr),
-                                 sizeof(nladdr),
-                                 iov,
-                                 1,
-                                 nullptr,
-                                 0,
-                                 0};
- 
-           // 接收数据
-           status = recvmsg(fd, &msg, 0);
-           if (status < 0) {
-               continue;
-           }
-           if (status == 0) {
-               ret = 0;
-               break;
-           }
-           h = (struct nlmsghdr *)buf;
-           while (NLMSG_OK(h, status)) {
-               int err;
-               struct inet_diag_msg *r;
-                
- 
-               // 本批报文处理完毕，退出循环
-               if (h->nlmsg_type == NLMSG_DONE) {
-                   ret = 0;
-                   break;
-               }
- 
-               // 收到错误报文，退出循环
-               if (h->nlmsg_type == NLMSG_ERROR) {
-                   ret = 0;
-                   break;
-               }
- 
-          // 获取报文的数据部分，然后转换成对应的数据类型指针，然后就可以处理其中的字段并输出
-               r = (struct inet_diag_msg *)NLMSG_DATA(h);
- 
-               h = NLMSG_NEXT(h, status);
-           }
-           if (ret != 1) {
-               break;
-           }
-       }
+int rtnl_dump_filter_l(struct rtnl_handle *rth,
+		       const struct rtnl_dump_filter_arg *arg)
+{
+	struct sockaddr_nl nladdr;
+	struct iovec iov;
+	struct msghdr msg = {
+		.msg_name = &nladdr,
+		.msg_namelen = sizeof(nladdr),
+		.msg_iov = &iov,
+		.msg_iovlen = 1,
+	};
+	char *buf;
+	int dump_intr = 0;
+
+	while (1) {
+		int status;
+		const struct rtnl_dump_filter_arg *a;
+		int found_done = 0;
+		int msglen = 0;
+
+		status = rtnl_recvmsg(rth->fd, &msg, &buf);
+		if (status < 0)
+			return status;
+
+		if (rth->dump_fp)
+			fwrite(buf, 1, NLMSG_ALIGN(status), rth->dump_fp);
+
+		for (a = arg; a->filter; a++) {
+			struct nlmsghdr *h = (struct nlmsghdr *)buf;
+
+			msglen = status;
+
+			while (NLMSG_OK(h, msglen)) {
+				int err = 0;
+
+				h->nlmsg_flags &= ~a->nc_flags;
+
+				if (nladdr.nl_pid != 0 ||
+				    h->nlmsg_pid != rth->local.nl_pid ||
+				    h->nlmsg_seq != rth->dump)
+					goto skip_it;
+
+				if (h->nlmsg_flags & NLM_F_DUMP_INTR)
+					dump_intr = 1;
+
+				if (h->nlmsg_type == NLMSG_DONE) {
+					err = rtnl_dump_done(h);
+					if (err < 0) {
+						free(buf);
+						return -1;
+					}
+
+					found_done = 1;
+					break; /* process next filter */
+				}
+
+				if (h->nlmsg_type == NLMSG_ERROR) {
+					rtnl_dump_error(rth, h);
+					free(buf);
+					return -1;
+				}
+
+				if (!rth->dump_fp) {
+					err = a->filter(&nladdr, h, a->arg1);
+					if (err < 0) {
+						free(buf);
+						return err;
+					}
+				}
+
+skip_it:
+				h = NLMSG_NEXT(h, msglen);
+			}
+		}
+		free(buf);
+
+		if (found_done) {
+			if (dump_intr)
+				fprintf(stderr,
+					"Dump was interrupted and may be inconsistent.\n");
+			return 0;
+		}
+
+		if (msg.msg_flags & MSG_TRUNC) {
+			fprintf(stderr, "Message truncated\n");
+			continue;
+		}
+		if (msglen) {
+			fprintf(stderr, "!!!Remnant of size %d\n", msglen);
+			exit(1);
+		}
+	}
+}
 ```
 
 ss命令在实现时是直接使用了rtnl_dump_filter函数对数据进行处理，收到一个报就会调用回调函数show_on_inet_sock：
