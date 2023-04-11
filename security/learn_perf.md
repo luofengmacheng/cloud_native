@@ -357,3 +357,5 @@ END
 ### 参考文档
 
 * [译｜2008｜User-Space Probes (Uprobes)](https://jayce.github.io/public/posts/trace/user-space-probes/)
+* [The bpftrace One-Liner Tutorial](https://github.com/iovisor/bpftrace/blob/master/docs/tutorial_one_liners.md)
+* [bpftrace Reference Guide](https://github.com/iovisor/bpftrace/blob/master/docs/reference_guide.md)
