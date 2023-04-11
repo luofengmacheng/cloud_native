@@ -332,6 +332,8 @@ END
 
 上面提到了很多名词，例如，uprobe、kprobe、perf、perf_event_open等，下面对这些词汇的关系进行整理：
 
+![各种trace的关系](https://github.com/luofengmacheng/cloud_native/blob/master/security/pics/trace_capability.jpeg)
+
 内核提供的能力：
 
 * kprobe：动态探针，用于跟踪内核函数
