@@ -10,4 +10,8 @@
 
 5 [filebeat中增加http的output插件](https://github.com/luofengmacheng/cloud_native/blob/master/security/filebeat_http.md)
 
-5 [lua如何调用C/C++](https://github.com/luofengmacheng/cloud_native/blob/master/security/lua_call_c.md)
+6 [lua如何调用C/C++](https://github.com/luofengmacheng/cloud_native/blob/master/security/lua_call_c.md)
+
+7 [Linux修改内核版本](https://github.com/luofengmacheng/cloud_native/blob/master/security/change_linux_kernel_version.md)
+
+8 [shell中exec命令的使用](https://github.com/luofengmacheng/cloud_native/blob/master/security/exec_in_shell.md)
