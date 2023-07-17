@@ -15,3 +15,6 @@
 7 [Linux修改内核版本](https://github.com/luofengmacheng/cloud_native/blob/master/security/change_linux_kernel_version.md)
 
 8 [shell中exec命令的使用](https://github.com/luofengmacheng/cloud_native/blob/master/security/exec_in_shell.md)
+
+9 [体育博彩](https://github.com/luofengmacheng/cloud_native/blob/master/security/odds.md)
+
