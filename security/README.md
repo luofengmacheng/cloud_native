@@ -21,3 +21,5 @@
 10 [C++中的全局变量以及static和extern关键字](https://github.com/luofengmacheng/cloud_native/blob/master/security/static_extern.md)
 
 11 [使用gdb调试core文件和breakpad的简单使用](https://github.com/luofengmacheng/cloud_native/blob/master/security/debug_core.md)
+
+12 [c++的lambda表达式](https://github.com/luofengmacheng/cloud_native/blob/master/security/lambda_cplusplus.md)
