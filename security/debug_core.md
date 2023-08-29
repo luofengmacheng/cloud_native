@@ -50,9 +50,9 @@ debug和release是程序发布的两种模式，两者的主要区别是：
 
 ### 5 break_pad的使用
 
-#### 3.1 升级gcc
+#### 5.1 升级gcc
 
-#### 3.2 breakpad的简单使用
+#### 5.2 breakpad的简单使用
 
 ```
 git clone https://github.com/google/breakpad.git
@@ -93,7 +93,7 @@ g++ test.c -o test -lbreakpad_client -I./
 
 然后执行./test就可以在/tmp目录下生成dump文件，那么在实际中如何使用breakpad呢？
 
-### 3.3 breakpad的实际使用
+#### 5.3 breakpad的实际使用
 
 这里又要提到上面的debug和release：debug是开发和功能测试过程中用的构建模式，编译时会带上-g选项，使用默认的优化级别_O0，release是性能测试和实际发布的构建模式，编译时会去掉-g选项，并使用高优化级别，例如-O2，同时，为了反逆向，还会对二进制进行加壳操作，提高外部对二进制分析的门槛。
 
@@ -138,3 +138,26 @@ addr2line -f -C -e test.debug 0x405f
 ```
 
 但是会发现，在release版本的情况下，由于加了优化级别，通过地址查不到具体导致crash的代码行，而用debug版本的情况下，是可以定位到具体报错的行。
+
+### 6 定位容器中的core
+
+如果在宿主机上用gdb定位容器中产生的core文件，会出现找不到so的问题，比如：
+
+![用gdb定位容器中的core文件失败](https://github.com/luofengmacheng/cloud_native/blob/master/security/pics/gdb_container_core_failed.jpg)
+
+一方面，可能宿主机本地确实没有这些so，另一方方面，容器中使用的so跟宿主机的也可能不同。
+
+gdb下面的提示也给出了解决办法：
+
+* set solib-search-path：设置so的搜索路径
+* set sysroot：设置so的根路径
+
+将命令放到~/.gdbinit中：
+
+```
+set sysroot /root/gdb_root
+```
+
+将容器中对应路径的so拷贝到/root/gdb_root中，例如，当缺少/usr/lib/libgcc_s.so.1时，就将容器中的/usr/lib/libgcc_s.so.1放到宿主机的/root/gdb_root/usr/lib/libgcc_s.so.1，然后用gdb开启调试，此时就可以读取到对应的so，但是这种方式就需要将依赖的so都下载放到这里。
+
+而另一个命令，`set solib-search-path`则适合用于会通过路径去查找so的场景，如果有时候就是查找特定路径的so，则该命令没啥用。
