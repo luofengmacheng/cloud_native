@@ -9,3 +9,5 @@
 4 [如何实现一个简单的API认证系统(key和secret)](https://github.com/luofengmacheng/cloud_native/blob/master/misc/api_key_secret.md)
 
 5 [网络虚拟化](https://github.com/luofengmacheng/cloud_native/blob/master/misc/virtual_network.md)
+
+6 [mongodb的数据批量导入](https://github.com/luofengmacheng/cloud_native/blob/master/misc/import_data_mongodb.md)
