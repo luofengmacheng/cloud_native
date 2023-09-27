@@ -23,3 +23,5 @@
 11 [使用gdb调试core文件和breakpad的简单使用](https://github.com/luofengmacheng/cloud_native/blob/master/security/debug_core.md)
 
 12 [c++的lambda表达式](https://github.com/luofengmacheng/cloud_native/blob/master/security/lambda_cplusplus.md)
+
+13 [VsCode调试C++](https://github.com/luofengmacheng/cloud_native/blob/master/security/vscode_debug.md)
