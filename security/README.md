@@ -25,3 +25,5 @@
 12 [c++的lambda表达式](https://github.com/luofengmacheng/cloud_native/blob/master/security/lambda_cplusplus.md)
 
 13 [VsCode调试C++](https://github.com/luofengmacheng/cloud_native/blob/master/security/vscode_debug.md)
+
+14 [二进制资产清点](https://github.com/luofengmacheng/cloud_native/blob/master/security/binary_asset.md)

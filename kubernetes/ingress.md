@@ -2,7 +2,7 @@
 
 ### 1 Service和Endpoint
 
-k8s中运行的最小单位是Pod，如果单独运行Pod，没有用控制器进行管理，在Pod出现异常情况时，无法进行重建，因此，在部署应用时，通常会使用Deployment、StatefulSet、DaemonSet控制器而不是直接运行Pod。而由于Pod会重建，在进行Pod之间的访问时引入了Service和Endpoint资源。
+k8s中运行的最小单位是Pod，如果单独运行Pod，没有用控制器进行管理，在Pod出现异常情况时，无法进行重建，因此，在部署应用时，通常会使用Deployment、StatefulSet、DaemonSet控制器而不是直接运行Pod。而由于Pod会重建，因此，在访问pod提供的能力时，不是直接访问pod，而是引入了Service和Endpoint资源。
 
 Service作为一组Pod对外提供服务的载体，当外部需要访问这组Pod时只需要通过ServiceName和ServicePort进行访问，不需要关心该Service后面的Pod，而ServiceName和ServicePort是固定的，通过这种方式就将一组可变的Pod提供的业务功能变成了对ServiceName和ServicePort的访问。
 
@@ -97,7 +97,7 @@ spec:
 -A KUBE-SEP-BT3GK3DTBVAYG4PT -p tcp -m comment --comment "default/nginx:5678-80" -m tcp -j DNAT --to-destination 10.244.0.43:80
 ```
 
-从这里可以看到，如果目标是服务的IP，就将流量导入到服务的Pod的IP。
+从这里可以看到，如果目标是服务的IP，就将流量导入到服务的Pod的IP。而对转发链进行操作的就是kube-proxy组件。
 
 #### 1.2 headless service及其使用场景
 
@@ -129,7 +129,7 @@ spec:
 headless service的使用场景主要有两类：
 
 * 想直接访问后端的Pod，而不是通过service进行转发
-* 想访问特定的Pod，对于statefulset来说，每个Pod的名称是固定的，可以在service的前面增加Pod的名称得到固定的某个Pod
+* 想访问特定的Pod，对于statefulset来说，每个Pod的名称是固定的，可以在service的前面增加Pod的名称得到固定的某个Pod，也就是某个机器上的pod拥有固定的名称
 
 #### 1.3 服务的类型
 
@@ -177,13 +177,15 @@ Ingress资源本身的字段比较少，主要的其实就是rules规则配置�
     http:
       paths:
       - backend:
-          serviceName: portal
-          servicePort: 1234
+          service:
+            name: portal
+            port:
+              number: 8080
         path: /
         pathType: ImplementationSpecific
 ```
 
-当访问test.baidu.com/时，portal这个服务的Pod会收到请求。
+当访问test.baidu.com/时，portal这个服务的8080端口会收到请求。
 
 ### 3 ingress controller
 
@@ -202,7 +204,7 @@ Ingress只是定义了路由转发规则，但是需要实际的程序实现该�
 
 于是，k8s在1.18提供了IngressClass，并在1.19称为正式版本。
 
-IngressClass作为Ingress和IngressController之间的关联关系：Ingress资源中增加ingressClassName字段，指定IngressClass，而Ingress Controller中一般也会指定IngressClass，那么，Ingress Controller就会根据Ingress Class
+IngressClass作为Ingress和IngressController之间的关联关系：Ingress资源中增加ingressClassName字段，指定IngressClass，而Ingress Controller中一般也会指定IngressClass，那么，Ingress Controller在获取到ingress资源的变化时，会查看ingress的ingressClassName跟自己需要的是否一致，如果一致，则获取其中的rules规则生成对应的转发策略。
 
 ### 5 nginx-ingress-controller
 
@@ -213,5 +215,10 @@ IngressClass作为Ingress和IngressController之间的关联关系：Ingress资�
 ![nginx ingress的资源关系图](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/pics/nginx_ingress_resources.jpg)
 
 * Ingress资源中只配置路由转发规则
-* nginx ingress controller以Deployment运行，可以将它理解为一个运行nginx的容器，并且它还对外暴露一个服务ingress-nginx-controller，由于ingress需要对外提供服务，因此，该服务的类型通常是LoadBalancer或者NodePort，另外，nginx运行时的参数中就有IngressClass
-* ingress controller容器中运行的nginx会监听所管理的ingress资源，根据路由转发规则生成nginx的配置文件，当ingress controller的服务收到请求后，根据转发规则转发给后端的pod
+* nginx ingress controller以Deployment运行，可以将它理解为一个运行nginx的容器，并且它还对外暴露一个服务ingress-nginx-controller，由于ingress需要对外提供服务，因此，该服务的类型通常是LoadBalancer(以Deployment运行)或者NodePort(以DaemonSet运行)，另外，nginx运行时的参数中就有IngressClass
+* ingress controller容器中运行的nginx会监听所管理的ingress资源，根据路由转发规则生成nginx的配置文件
+
+具体请求的过程如下：
+
+* 访问负载均衡器分配的EIP或者节点IP的服务，然后会转发给ingress controller的Pod
+* ingress controller的Pod根据转发规则将请求直接转发给后端的Pod，此时不需要再经过后端的服务
