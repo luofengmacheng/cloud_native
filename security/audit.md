@@ -1,17 +1,23 @@
-## audit
+## linux audit审计使用入门
+
+@[TOC]
 
 ### 1 audit简介
 
-audit是Linux从()版本开始提供的内核审计机制，最开始加入内核时，存在一些问题，可能会导致系统宕机，但是，在3.x之后的版本中一班没有该风险，不过，也存在其他问题。
-
-由于audit是内核提供的，因此，整个audit体系包含内核空间和用户空间部分：
+audit是Linux内核提供的一种审计机制，由于audit是内核提供的，因此，在使用audit的过程中就包含内核空间和用户空间部分：
 
 * rules：审计规则，其中配置了审计系统需要审计的操作
 * auditctl：用户态程序，用于审计规则配置和配置变更
 * kaudit：内核空间程序，根据配置好的审计规则记录发生的事件
 * auditd：用户态程序，通过netlink获取审计日志
 
-大概的流程：用户通过auditctl配置审计规则，内核的kauditd程序获取到审计规则后，记录对应的审计日志，用户态的auditd获取审计日志并写入日志文件。
+通常的使用流程：
+
+* 用户通过auditctl配置审计规则
+* 内核的kauditd程序获取到审计规则后，记录对应的审计日志
+* 用户态的auditd获取审计日志并写入日志文件。
+
+audit的主要应用场景是安全审计，通过对日志进行分析发现异常行为。
 
 ### 2 auditctl的使用
 
@@ -92,7 +98,6 @@ type=SYSCALL msg=audit(1682236056.128:4318964): arch=c000003e syscall=59 success
 * lost：由于缓存队列超过限制而导致的丢失的记录数
 * backlog：当前缓存队列中等待读取的记录数
 * backlog_wait_time：缓存队列满时的等待时间
-* loginuid_immutable：
 
 其中backlog_wait_time是后面的版本提供的。
 
@@ -121,99 +126,13 @@ task、exit、user分别表示审计事件的三种类型：user事件是指与�
 
 ![audit审计系统调用的流程](https://github.com/luofengmacheng/cloud_native/blob/master/security/pics/audit_syscall_flow.jpg)
 
-### 4 audit存在的问题
+### 4 audit接口调用
 
-如果只是正常使用audit：配置audit规则，查看审计日志，也没啥问题，但是，实际使用过程中，还是存在一些问题。
-
-#### 4.1 内核版本
-
-不同版本的内核在实现机制上有所不同，因此，运行表现和参数控制上也有所不同：
-
-* 小于3.14的内核没有提供设置backlog_wait_time的接口
-
-#### 4.2 审计日志过多造成的缓存队列和磁盘问题
-
-audit_log_end将审计日志放到audit_queue的队尾，如果审计日志较多，可能会导致队列很长，占用的资源增多，因此，内核也提供了一些参数进行控制：
-
-* backlog_limit：缓存队列长度限制
-* backlog_wait_time：缓存队列满的等待时间
-
-``` C
-// audit_log_start(linux-4.19.281)
-    // auditd_test_task：检查当前进程是否是audit daemon进程
-    // audit_ctl_owner_current：检查当前进程是否持有audit_cmd_mutex锁
-    // 因此，这里进入if的条件是：当前进程不是audit daemon进程，并且没有持有锁
-	if (!(auditd_test_task(current) || audit_ctl_owner_current())) {
-
-		// 获取audit_backlog_wait_time，就是auditctl -s中的backlog_wait_time
-		long stime = audit_backlog_wait_time;
-
-		// audit_backlog_limit就是auditctl -s中的backlog_limit，默认值是64
-		// 因此，这里进入while的条件是：设置了backlog_limit，并且当前缓存队列的长度大于backlog_limit
-		while (audit_backlog_limit &&
-		       (skb_queue_len(&audit_queue) > audit_backlog_limit)) {
-			// 唤醒kauditd处理队列中的日志
-			wake_up_interruptible(&kauditd_wait);
-
-			/* sleep if we are allowed and we haven't exhausted our
-			 * backlog wait limit */
-		    // 如果当前进程允许休眠，并且backlog_wait_time大于0，则进入if，backlog_wait_time默认是60s
-			if (gfpflags_allow_blocking(gfp_mask) && (stime > 0)) {
-				// 创建等待队列的节点
-				DECLARE_WAITQUEUE(wait, current);
-
-				// 将刚才创建的等待队列的节点wait加入到队列audit_backlog_wait中
-				add_wait_queue_exclusive(&audit_backlog_wait,
-							 &wait);
-				set_current_state(TASK_UNINTERRUPTIBLE);
-
-				// 让当前进程休眠一段时间
-				stime = schedule_timeout(stime);
-
-				// 将wait从audit_backlog_wait队列中移除
-				remove_wait_queue(&audit_backlog_wait, &wait);
-			} else {
-				// 如果当前进程没有休眠，则先检查审计日志的生成速度是否超过rate_limit
-				if (audit_rate_check() && printk_ratelimit())
-					pr_warn("audit_backlog=%d > audit_backlog_limit=%d\n",
-						skb_queue_len(&audit_queue),
-						audit_backlog_limit);
-
-				// lost自增1，并在审计日志中打印缓存队列超过限制
-				audit_log_lost("backlog limit exceeded");
-				return NULL;
-			}
-		}
-	}
-```
-
-从上面的代码可以看出，当队列长度超过backlog_limit时，内核会休眠一段时间backlog_wait_time(默认60秒)，如果backlog_limit为0，则不会休眠，而是会打印backlog limit exceeded日志。
-
-因此，如果backlog_wait_time不为0，而日志太多时，可能导致内核频繁休眠，极端情况下，系统直接卡死。
-
-如果要解决这个问题，可以从几个方面入手：
-
-* 审计规则尽可能只配置必要的，防止生成大量无用的审计日志
-* 根据机器配置增加backlog_limit，例如，将backlog_limit可以设置为8193或者更大
-* backlog_wait_time设置为0，当日志过多时直接丢弃，防止影响日常的使用
-* 审计日志的消费者尽可能快速消费日志，可能的情况下，可以增加丢弃策略，防止审计日志堆积
-
-当审计日志过多，还会造成磁盘占用率的问题：当审计日志太多，可能会占用大量磁盘空间。
-
-需要注意的是，即使没有配置审计规则，日志中也可能有审计日志，pam认证、服务启动等，在没有规则的情况下内核也会生成审计日志。
-
-同时，从3.16.0开始，内核增加了多消费者，允许多个进程同时读取审计日志，那么，如果存在其他进程也读取审计然后写到日志文件的话，磁盘占用的问题又会放大，因此，对于磁盘占用的问题，可以从以下几个方面入手：
-
-* 是否有其他进程也读取了审计日志
-* 在没有配置审计规则的情况下是否也会产生大量日志
-
-### 5 audit接口调用
-
-auditctl使用netlink与内核进行交互，因此，要想实现audit的一些能力，就需要采用netlink实现一套交互接口，幸运的是，已经有库可以完成这项工作：yum install -y audit-libs-devel。
+auditctl使用netlink与内核进行交互，因此，要想实现audit的一些能力，就需要采用netlink实现一套交互接口，幸运的是，已经有库可以完成这项工作：yum install -y audit-libs-devel，然后编译时带上`-laudit`。
 
 安装完成后，可以查看头文件/usr/include/libaudit.h看下提供的方法。
 
-#### 5.1 获取和修改配置
+#### 4.1 获取和修改配置
 
 ``` c++
 #include <iostream>
@@ -335,10 +254,9 @@ int main() {
 
 对于修改配置的操作，libaudit直接提供了对应的api函数，例如，设置backlog_limit，可以直接调用audit_set_backlog_limit()。
 
-#### 5.2 获取和修改规则
+#### 4.2 获取和修改规则
 
 ``` c++
-
 #include <iostream>
 #include <libaudit.h>
 
@@ -352,21 +270,26 @@ int main() {
 
     int fd = audit_open();
 
-    audit_request_rules_list_data(fd);
+    do {
+        audit_request_rules_list_data(fd);
 
-    fd_set read_mask;
-    FD_ZERO(&read_mask);
-    FD_SET(fd, &read_mask);
-    select(fd+1, &read_mask, NULL, NULL, &t);
-
-    struct audit_reply reply;
-    audit_get_reply(fd, &reply, GET_REPLY_NONBLOCKING, 0);
-    struct audit_rule_data *rules;
-    rules = reply.ruledata;
-
-    cout <<"auditctl -l return:" <<endl;
-    cout << audit_flag_to_name(rules[0].flags) << endl;
-    cout << audit_action_to_name(rules[0].action) << endl;
+        fd_set read_mask;
+        FD_ZERO(&read_mask);
+        FD_SET(fd, &read_mask);
+        select(fd+1, &read_mask, NULL, NULL, &t);
+    
+        struct audit_reply reply;
+        audit_get_reply(fd, &reply, GET_REPLY_NONBLOCKING, 0);
+        if(reply.type == NLMSG_DONE) {
+            break;
+        }
+        struct audit_rule_data *rules;
+        rules = reply.ruledata;
+    
+        cout <<"auditctl -l return:" <<endl;
+        cout << audit_flag_to_name(rules->flags) << endl;
+        cout << audit_action_to_name(rules->action) << endl;
+    } while(true);
 
     return 0;
 }
@@ -420,12 +343,154 @@ int main() {
 
 上面的代码相当于`auditctl -w /etc/passwd -p rwxa`。
 
-#### 5.3 获取审计日志
+#### 4.3 获取审计日志
 
+获取升级日志还是使用netlink的方式读取：
 
+``` C++
+#include <iostream>
+#include <libaudit.h>
+#include <string.h>
+#include <unistd.h>
 
-### 参考文档
+using namespace std;
+
+int main() {
+    int audit_fd = audit_open();
+    if (audit_fd < 0) {
+	cout << "open audit fail:" << strerror(errno) << endl;
+        return -1;
+    }
+
+    audit_set_enabled(audit_fd, 1);
+    struct audit_reply audit_rep;
+    int ret;
+    struct timeval t = {
+            .tv_sec = 5, .tv_usec = 0
+        };
+    pid_t cur_pid = getpid();
+    ret = audit_set_pid(audit_fd, static_cast<uint32_t>(cur_pid),
+                               WAIT_NO);
+    if (ret <= 0) {
+        cout << "audit_set_pid fail:" << strerror(errno) << endl;
+        return -1;
+    }
+    do {
+        fd_set read_mask;
+        FD_ZERO(&read_mask);
+        FD_SET(audit_fd, &read_mask);
+        ret = select(audit_fd + 1, &read_mask, nullptr, nullptr, &t);
+        if (ret <= 0) {
+            cout << "select fail:" << strerror(errno) << endl;
+            continue;
+        }
+        ret = audit_get_reply(audit_fd, &audit_rep,
+                          GET_REPLY_NONBLOCKING, 0);
+        if (ret <= 0) {
+            cout << "open audit fail:" << strerror(errno) << endl;
+        }
+
+        printf("%s %s", __FUNCTION__, audit_rep.msg.data);
+        cout << audit_rep.msg.data << endl;
+    } while(true);
+
+    return 0;
+}
+```
+
+### 5 audit存在的问题
+
+如果只是正常使用audit：配置audit规则，查看审计日志，也没啥问题，但是，实际使用过程中，还是存在一些问题。
+
+#### 5.1 内核版本
+
+不同版本的内核在实现机制上有所不同，因此，运行表现和参数控制上也有所不同：
+
+* 小于3.14的内核没有提供设置backlog_wait_time的接口
+
+#### 5.2 审计日志过多造成的缓存队列和磁盘问题
+
+audit_log_end将审计日志放到audit_queue的队尾，如果审计日志较多，可能会导致队列很长，占用的资源增多，因此，内核也提供了一些参数进行控制：
+
+* backlog_limit：缓存队列长度限制
+* backlog_wait_time：缓存队列满的等待时间
+
+``` C
+// audit_log_start(linux-4.19.281)
+    // auditd_test_task：检查当前进程是否是audit daemon进程
+    // audit_ctl_owner_current：检查当前进程是否持有audit_cmd_mutex锁
+    // 因此，这里进入if的条件是：当前进程不是audit daemon进程，并且没有持有锁
+	if (!(auditd_test_task(current) || audit_ctl_owner_current())) {
+
+		// 获取audit_backlog_wait_time，就是auditctl -s中的backlog_wait_time
+		long stime = audit_backlog_wait_time;
+
+		// audit_backlog_limit就是auditctl -s中的backlog_limit，默认值是64
+		// 因此，这里进入while的条件是：设置了backlog_limit，并且当前缓存队列的长度大于backlog_limit
+		while (audit_backlog_limit &&
+		       (skb_queue_len(&audit_queue) > audit_backlog_limit)) {
+			// 唤醒kauditd处理队列中的日志
+			wake_up_interruptible(&kauditd_wait);
+
+			/* sleep if we are allowed and we haven't exhausted our
+			 * backlog wait limit */
+		    // 如果当前进程允许休眠，并且backlog_wait_time大于0，则进入if，backlog_wait_time默认是60s
+			if (gfpflags_allow_blocking(gfp_mask) && (stime > 0)) {
+				// 创建等待队列的节点
+				DECLARE_WAITQUEUE(wait, current);
+
+				// 将刚才创建的等待队列的节点wait加入到队列audit_backlog_wait中
+				add_wait_queue_exclusive(&audit_backlog_wait,
+							 &wait);
+				set_current_state(TASK_UNINTERRUPTIBLE);
+
+				// 让当前进程休眠一段时间
+				stime = schedule_timeout(stime);
+
+				// 将wait从audit_backlog_wait队列中移除
+				remove_wait_queue(&audit_backlog_wait, &wait);
+			} else {
+				// 如果当前进程没有休眠，则先检查审计日志的生成速度是否超过rate_limit
+				if (audit_rate_check() && printk_ratelimit())
+					pr_warn("audit_backlog=%d > audit_backlog_limit=%d\n",
+						skb_queue_len(&audit_queue),
+						audit_backlog_limit);
+
+				// lost自增1，并在审计日志中打印缓存队列超过限制
+				audit_log_lost("backlog limit exceeded");
+				return NULL;
+			}
+		}
+	}
+```
+
+从上面的代码可以看出，当队列长度超过backlog_limit时，内核会休眠一段时间backlog_wait_time(默认60秒)，如果backlog_limit为0，则不会休眠，而是会打印backlog limit exceeded日志。
+
+因此，如果backlog_wait_time不为0，而日志太多时，可能导致内核频繁休眠，极端情况下，系统直接卡死。
+
+如果要解决这个问题，可以从几个方面入手：
+
+* 审计规则尽可能只配置必要的，防止生成大量无用的审计日志
+* 根据机器配置增加backlog_limit，例如，将backlog_limit可以设置为8193或者更大
+* backlog_wait_time设置为0，当日志过多时直接丢弃，防止影响日常的使用
+* 审计日志的消费者尽可能快速消费日志，可能的情况下，可以增加丢弃策略，防止审计日志堆积
+
+当审计日志过多，还会造成磁盘占用率的问题：当审计日志太多，可能会占用大量磁盘空间。
+
+需要注意的是，即使没有配置审计规则，日志中也可能有审计日志，pam认证、服务启动等，在没有规则的情况下内核也会生成审计日志。
+
+同时，从3.16.0开始，内核增加了多消费者，允许多个进程同时读取审计日志，那么，如果存在其他进程也读取审计然后写到日志文件的话，磁盘占用的问题又会放大，因此，对于磁盘占用的问题，可以从以下几个方面入手：
+
+* 是否有其他进程也读取了审计日志
+* 在没有配置审计规则的情况下是否也会产生大量日志
+
+#### 5.2 容器环境下同一个命令的日志存在差异
+
+在容器环境下，同一个命令的日志可能存在差异，因为命令的实现有所不同，比较典型的是，有些镜像的vi是重定向到busybox，有些则是跟主机一样的二进制文件，那么他们产生的日志就不同，就会造成分析上的困难。
+
+### 6 参考文档
 
 * [RHEL Audit System Reference](https://access.redhat.com/articles/4409591)
 * [读懂audit日志](https://www.cnblogs.com/xingmuxin/p/8796961.html)
 * [Audit framework](https://wiki.archlinux.org/title/Audit_framework)
+* 
