@@ -481,7 +481,7 @@ audit_log_end将审计日志放到audit_queue的队尾，如果审计日志较�
 
 同时，从3.16.0开始，内核增加了多消费者，允许多个进程同时读取审计日志，那么，如果存在其他进程也读取审计然后写到日志文件的话，磁盘占用的问题又会放大，因此，对于磁盘占用的问题，可以从以下几个方面入手：
 
-* 是否有其他进程也读取了审计日志
+* 是否有其他进程也读取了审计日志，例如systemd-journald-audit，可以将ListenNetlink的audit 1改成audit 0，然后执行`systemctl stop systemd-journald-audit.socket`和`systemctl restart systemd-journald.socket`
 * 在没有配置审计规则的情况下是否也会产生大量日志
 
 #### 5.2 容器环境下同一个命令的日志存在差异

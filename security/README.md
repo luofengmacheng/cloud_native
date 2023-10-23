@@ -2,7 +2,7 @@
 
 1 [Falco](https://github.com/luofengmacheng/cloud_native/blob/master/security/falco.md)
 
-2 [ss(socket statistics)命令实现](https://github.com/luofengmacheng/cloud_native/blob/master/security/ss_implementation.md)
+2 [ss(socket statistics)和netstat获取网络连接的实现](https://github.com/luofengmacheng/cloud_native/blob/master/security/ss_implementation.md)
 
 3 [获取so加载事件](https://github.com/luofengmacheng/cloud_native/blob/master/security/so_load_event.md)
 
@@ -26,4 +26,6 @@
 
 13 [VsCode调试C++](https://github.com/luofengmacheng/cloud_native/blob/master/security/vscode_debug.md)
 
-14 [二进制资产清点](https://github.com/luofengmacheng/cloud_native/blob/master/security/binary_asset.md)
+14 [二进制漏洞检测方案](https://github.com/luofengmacheng/cloud_native/blob/master/security/binary_asset.md)
+
+15 [linux audit审计使用入门](https://github.com/luofengmacheng/cloud_native/blob/master/security/audit.md)
