@@ -64,4 +64,8 @@
 
 ### 32 [使用luakube访问kubernetes api](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/call_k8s_api_by_luakube.md)
 
-### 33 [问题定位技巧](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/trouble_shooting.md)
+### 33 [Operator开发之kubebuilder实战（一）](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/kubebuilder1.md)
+
+### 34 [Operator开发之kubebuilder实战（二）](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/kubebuilder2.md)
+
+### 35 [问题定位技巧](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/trouble_shooting.md)

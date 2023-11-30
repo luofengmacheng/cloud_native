@@ -29,3 +29,9 @@
 14 [二进制漏洞检测方案](https://github.com/luofengmacheng/cloud_native/blob/master/security/binary_asset.md)
 
 15 [linux audit审计使用入门](https://github.com/luofengmacheng/cloud_native/blob/master/security/audit.md)
+
+16 [2.6.6版本的audit审计机制分析](https://github.com/luofengmacheng/cloud_native/blob/master/security/audit_kernel_2.6.6.md)
+
+17 [3.10.0版本的audit审计机制分析](https://github.com/luofengmacheng/cloud_native/blob/master/security/audit_kernel_3.10.0.md)
+
+18 [通过/proc/pid/获取进程信息](https://github.com/luofengmacheng/cloud_native/blob/master/security/proc_pid_annotation.md)
