@@ -34,4 +34,12 @@
 
 17 [3.10.0版本的audit审计机制分析](https://github.com/luofengmacheng/cloud_native/blob/master/security/audit_kernel_3.10.0.md)
 
-18 [通过/proc/pid/获取进程信息](https://github.com/luofengmacheng/cloud_native/blob/master/security/proc_pid_annotation.md)
+19 [C++多线程编程(一): 互斥锁](https://github.com/luofengmacheng/cloud_native/blob/master/security/cplusplus_lock.md)
+
+20 [C++多线程编程(二): 条件变量](https://github.com/luofengmacheng/cloud_native/blob/master/security/cplusplus_condition_variable.md)
+
+21 [C++多线程编程(三): std::thread线程类](https://github.com/luofengmacheng/cloud_native/blob/master/security/cplusplus_thread.md)
+
+22 [C++多线程编程(四): atomic原子操作](https://github.com/luofengmacheng/cloud_native/blob/master/security/cplusplus_atomic.md)
+
+23 [C++多线程编程(五): pthread_lock](https://github.com/luofengmacheng/cloud_native/blob/master/security/proc_pid_annotation.md)
