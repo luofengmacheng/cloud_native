@@ -1,4 +1,4 @@
-## kubernetes网络之Flannel
+## 【kubernetes】集群网络（二）：Flannel的VxLan、Host-GW模式
 
 ### 1 Pod的IP地址的分配
 
@@ -44,48 +44,11 @@ Flannel的yaml可以从官网直接下载安装，需要注意的有两个地方
 * 使用的flannel镜像如果无法下载，可以将镜像仓库修改为quay.mirrors.ustc.edu.cn
 * 如果有需要可以调整Pod网段，默认的网段是10.244.0.0/16
 
-#### 3.2 关键路径
-
-/etc/cni/net.d/10-flannel.conflist CNI配置文件
-
-``` json
-{
-  "name": "cbr0",
-  "cniVersion": "0.3.1",
-  "plugins": [
-    {
-      "type": "flannel",
-      "delegate": {
-        "hairpinMode": true,
-        "isDefaultGateway": true
-      }
-    },
-    {
-      "type": "portmap",
-      "capabilities": {
-        "portMappings": true
-      }
-    }
-  ]
-}
-```
-
-/run/flannel/subnet.env
-
-``` shell
-FLANNEL_NETWORK=10.244.0.0/16
-FLANNEL_SUBNET=10.244.0.1/24
-FLANNEL_MTU=1450
-FLANNEL_IPMASQ=true
-```
-
-/opt/cni/bin flannel的二进制插件
-
-#### 3.3 VxLan
+#### 3.2 VxLan
 
 VxLan是一项用于在三层网络传输二层网络数据包的技术，只要底层的三层网络可达，就可以在三层网络之上建立二层网络，从而构建逻辑上的大二层网络。
 
-
+![Flannel VxLan](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/pics/flannel_vxlan.jpg)
 
 上图就是两个node上的Pod之间通信的流程。
 
@@ -97,16 +60,33 @@ VxLan是一项用于在三层网络传输二层网络数据包的技术，只要
 * 由于目的端的网络子系统会监听8472，当node1收到数据后，flannel.1就会收到数据，然后将数据解封装后，根据路由交给cni0
 * cni0收到数据后，根据目的IP的mac地址转发给对应的容器
 
-以上就完成了从源容器到目的容器的一次完整的网络数据交互。
+#### 3.3 Host-GW
 
-### 3.3 UDP
+host-gw是直接走宿主机的网络，将对方的宿主机当做路由器进行转发。
 
-### 3.4 Host-GW
+![Flannel Host-GW](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/pics/flannel_host_gw.jpg)
 
-host-gw是
+* Pod1向Pod3发送数据时，同样的，会通过veth pair将数据发送给cni0
+* cni0根据路由表将数据发送给Pod3所在的宿主机
+* Pod3所在的宿主机收到数据后，根据路由表将数据发送给cni0
+* cni0再根据目的IP转发给Pod3
 
-1 veth -> cni0
+这里指导数据包流向的就是宿主机上面的路由，对于我们这里的场景，宿主机上面的路由可能是：
 
-2 cni0 -> flannel.1
+```
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         192.168.80.2    0.0.0.0         UG    0      0        0 ens33
+10.244.0.0      192.168.80.241  255.255.255.0   UG    0      0        0 ens33
+10.244.1.0      192.168.80.242  255.255.255.0   UG    0      0        0 ens33
+10.244.2.0      0.0.0.0         255.255.255.0   U     0      0        0 cni0
+```
 
-3 flannel.1 -> dest flannel.1
+第二条路由就是当前集群中的另一个节点，该节点的宿主机IP是192.168.80.241，网段是10.2440.0./24，因此，当cni0收到发往10.244.0.0/24网段的Pod的数据包时，会根据该路由将数据包发送给192.168.80.241，发出去的接口是ens33。
+
+第四条路由就是当前节点的网段，当本机收到发往当前节点的Pod的数据包时，会根据该条路由将数据包发送给cni0，然后cni0就可以将数据包发送给目的Pod。
+
+这种方式是直接将目的Pod的宿主机作为网关，不会对数据包进行额外的封装解封装，因此，这种模式的性能比较高，它的缺点是，宿主机必须在同一个网段中，所以，在云环境中可能需要其他的组件支持。
+
+### 4 总结
+
+Flannel作为k8s中广泛使用的网络插件，它的实现相对容易理解，它还提供了不同的模式，常用的是VxLan和Host-GW，由于Host-GW要求宿主机在同一个网段，使用受限，因此，最常用的还是VxLan。
