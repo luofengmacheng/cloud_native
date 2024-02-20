@@ -6,7 +6,7 @@
 
 1 [入门](https://github.com/luofengmacheng/cloud_native/blob/master/antlr/introduction.md)
 
-2 [语法规则](https://github.com/luofengmacheng/cloud_native/blob/master/antlr/syntax_rule.md)
+2 [编写规则文件](https://github.com/luofengmacheng/cloud_native/blob/master/antlr/syntax_rule.md)
 
 3 [遍历语法树](https://github.com/luofengmacheng/cloud_native/blob/master/antlr/traverse_tree.md)
 
