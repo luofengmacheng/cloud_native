@@ -11,3 +11,5 @@
 5 [网络虚拟化](https://github.com/luofengmacheng/cloud_native/blob/master/misc/virtual_network.md)
 
 6 [mongodb的数据批量导入](https://github.com/luofengmacheng/cloud_native/blob/master/misc/import_data_mongodb.md)
+
+7 [安装Python 3.11](https://blog.csdn.net/Yaphets_dan/article/details/129441949)
