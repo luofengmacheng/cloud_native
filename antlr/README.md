@@ -8,6 +8,6 @@
 
 2 [编写规则文件](https://github.com/luofengmacheng/cloud_native/blob/master/antlr/syntax_rule.md)
 
-3 [遍历语法树](https://github.com/luofengmacheng/cloud_native/blob/master/antlr/traverse_tree.md)
+3 [遍历语法分析树](https://github.com/luofengmacheng/cloud_native/blob/master/antlr/traverse_tree.md)
 
 4 [错误处理](https://github.com/luofengmacheng/cloud_native/blob/master/antlr/error_handling.md)
