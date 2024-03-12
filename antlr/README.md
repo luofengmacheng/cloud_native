@@ -10,4 +10,6 @@
 
 3 [遍历语法分析树](https://github.com/luofengmacheng/cloud_native/blob/master/antlr/traverse_tree.md)
 
-4 [错误处理](https://github.com/luofengmacheng/cloud_native/blob/master/antlr/error_handling.md)
+4 [优化计算器程序](https://github.com/luofengmacheng/cloud_native/blob/master/antlr/optimize_calculator.md)
+
+5 [错误处理](https://github.com/luofengmacheng/cloud_native/blob/master/antlr/error_handling.md)

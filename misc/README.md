@@ -12,4 +12,4 @@
 
 6 [mongodb的数据批量导入](https://github.com/luofengmacheng/cloud_native/blob/master/misc/import_data_mongodb.md)
 
-7 [安装Python 3.11](https://blog.csdn.net/Yaphets_dan/article/details/129441949)
+7 [python环境搭建(Python 3.11.8)](https://github.com/luofengmacheng/cloud_native/blob/master/misc/install_python.md)
