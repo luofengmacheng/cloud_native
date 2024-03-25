@@ -43,3 +43,5 @@
 22 [C++多线程编程(四): atomic原子操作](https://github.com/luofengmacheng/cloud_native/blob/master/security/cplusplus_atomic.md)
 
 23 [C++多线程编程(五): pthread_lock](https://github.com/luofengmacheng/cloud_native/blob/master/security/proc_pid_annotation.md)
+
+24 [使用IDA查看二进制](https://github.com/luofengmacheng/cloud_native/blob/master/security/ida_learn.md)
