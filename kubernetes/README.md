@@ -69,3 +69,11 @@
 ### 34 [Operator开发之kubebuilder实战（二）](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/kubebuilder2.md)
 
 ### 35 [问题定位技巧](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/trouble_shooting.md)
+
+### 36 [集群中的DNS配置以及问题定位](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/dns_problems.md)
+
+### 37 [CentOS 9使用Docker镜像实现交叉编译](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/cross_compile.md)
+
+### 38 [kubernetes排障：kubelet cgroup driver: "systemd" is different from docker cgroup driver: "cgroupfs"](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/kubelet_cgroup_different.md)
+
+### 39 [K8S节点状态的维护](https://github.com/luofengmacheng/cloud_native/blob/master/kubernetes/node_status.md)
