@@ -18,4 +18,6 @@
 
 ### [STM32](https://github.com/luofengmacheng/cloud_native/blob/master/stm32/README.md)
 
+### [Prometheus](https://github.com/luofengmacheng/cloud_native/blob/master/prometheus/README.md)
+
 ### [Misc](https://github.com/luofengmacheng/cloud_native/blob/master/misc/README.md)
